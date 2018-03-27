@@ -30,11 +30,7 @@ class Parallax {
 
       // Set style for parallax element with type 'default'
       if (cache.type === 'default') {
-        const transform = this.getTransform(cache, current);
-        const top = Math.round(cache.top + transform - current);
-        const bottom = Math.round(cache.bottom + transform - current);
-
-        const inView = bottom > 0 && top < parentState.height;
+        const { inView, transform } = this.calc(cache, parentState);
 
         if (inView) {
           el.style[this.transformPrefix] = utils.getCSSTransform(
@@ -45,23 +41,48 @@ class Parallax {
       } else {
         // Do other things for parallax element with other type
         try {
-          this.options.parallax[cache.type].run.call(this, cache, parentState);
+          const state = Object.assign({}, parentState);
+
+          Object.keys(parentState)
+            .filter(
+              key =>
+                ![
+                  'current',
+                  'last',
+                  'target',
+                  'width',
+                  'height',
+                  'bounding'
+                ].includes(key)
+            )
+            .forEach(key => delete state[key]);
+
+          this.options.parallax[cache.type].run.call(this, { cache, state });
         } catch (error) {
           const msg =
-            'ScrollManager.run: error occured while calling run function for parallax element with type';
+            'ScrollManager.run: error occured while calling run function for parallax elements with type';
           console.error(`${msg} '${cache.type}'`, error);
         }
       }
     });
   }
 
-  // Calculte transform position of an element
-  getTransform(data, currentPosition) {
-    const offset =
-      this.options.direction === 'vertical'
-        ? data.top + data.center
-        : data.left + data.center;
-    return (offset - currentPosition) * data.speed;
+  // Calculate usefull values
+  // transform: the transform value according to speed (data-speed) values
+  // start: distance between start of screen and start of element (top||left)
+  // end: distance between start of screen and end of element (bottom||right)
+  // inView: indicates whether the element is into view
+  calc(cache, state) {
+    const vertical = this.options.direction === 'vertical';
+    const { top, right, bottom, left, center, speed } = cache;
+    const { width, height, current } = state;
+
+    const transform = ((vertical ? top : left) + center - current) * speed;
+    const start = Math.round((vertical ? top : left) + transform - current);
+    const end = Math.round((vertical ? bottom : right) + transform - current);
+    const inView = end > 0 && start < (vertical ? height : width);
+
+    return { transform, start, end, inView };
   }
 
   cache(parentState) {
@@ -74,16 +95,19 @@ class Parallax {
 
       this.DOM.els.forEach((el, index) => {
         el.style.display = null;
-        if (window.getComputedStyle(el).display === 'none') {
+        const computedDisplay = window.getComputedStyle(el).display;
+        if (computedDisplay === 'none') {
           this.state.cache.push(null);
           return;
         }
 
-        el.style.display = 'block';
+        if (computedDisplay === 'inline') {
+          el.style.display = 'block';
+        }
         el.style[this.transformPrefix] = 'none';
 
         const bounding = el.getBoundingClientRect();
-        let data = {
+        let cache = {
           el,
           top: isVertical ? bounding.top + scrollOffset : bounding.top,
           left: isVertical ? bounding.left : bounding.left + scrollOffset,
@@ -95,25 +119,24 @@ class Parallax {
         };
 
         // Set default style for parallax element with type 'default'
-        if (data.type === 'default') {
-          const transform = this.getTransform(data, parentState.current);
+        if (cache.type === 'default') {
+          const { transform } = this.calc(cache, parentState);
           el.style[this.transformPrefix] = utils.getCSSTransform(
             transform,
             this.options.direction
           );
         } else {
-          // Do custom things for parallax element with other type
-          try {
-            let getCache = this.options.parallax[data.type].getCache;
-            data = Object.assign(data, getCache.call(this, data));
-          } catch (error) {
-            const msg =
-              'ScrollManager.getCache: error occured while getting cache for parallax element with type';
-            console.error(`${msg} '${data.type}'`, error);
+          // Do custom things for parallax elements with custom type
+          if (this.options.parallax[cache.type]) {
+            const getCache = this.options.parallax[cache.type].getCache;
+            if (getCache) {
+              const extend = getCache.call(this, { cache, state: parentState });
+              cache = Object.assign(cache, extend);
+            }
           }
         }
 
-        this.state.cache.push(data);
+        this.state.cache.push(cache);
       });
 
       this.state.caching = false;

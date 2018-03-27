@@ -1,8 +1,8 @@
 {
   "name": "rolly.js",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description":
-    "Completely custom scroll behavior with inertia and smooth parallax as hell. Ha and there is also scenes (like in scrollmanager.js)",
+    "Custom scroll behavior with inertia, smooth parallax as hell and scenes",
   "main": "dist/rolly.cjs.js",
   "module": "dist/rolly.esm.js",
   "browser": "dist/rolly.umd.js",
@@ -28,16 +28,16 @@
   "keywords": [
     "scroll",
     "parallax",
+    "animation",
     "scene",
-    "smooth",
-    "easing",
-    "inertia",
-    "anchor"
+    "smooth-scrolling",
+    "scrollto",
+    "rolly"
   ],
   "author": "Mickael Chanrion",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/majdigital/rolly/issues"
   },
-  "homepage": "https://github.com/majdigital/rolly#readme"
+  "homepage": "https://rolly.maj.digital"
 }
