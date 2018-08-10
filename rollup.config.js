@@ -1,5 +1,6 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
+import babel from 'rollup-plugin-babel';
 import pkg from './package.json';
 
 export default [
@@ -13,6 +14,7 @@ export default [
     },
     plugins: [
       resolve(), // so Rollup can find `modules`
+      babel({exclude: 'node_modules/**'}),
       commonjs() // so Rollup can convert `modules` to an ES module
     ]
   },
@@ -29,6 +31,9 @@ export default [
     output: [
       { file: pkg.main, format: 'cjs' },
       { file: pkg.module, format: 'es' }
+    ],
+    plugins: [
+      babel({exclude: 'node_modules/**'}),
     ]
   }
 ];

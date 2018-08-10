@@ -36,6 +36,10 @@ body {
   background: #efefef;
 }
 
+.rolly-scrollbar.is-hidden {
+  display: none;
+}
+
 .rolly-scrollbar.rolly-vertical {
   top: 0;
   right: 0;

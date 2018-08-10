@@ -1,8 +1,7 @@
 {
   "name": "rolly.js",
-  "version": "0.1.0",
-  "description":
-    "Custom scroll behavior with inertia, smooth parallax as hell and scenes",
+  "version": "0.1.5",
+  "description": "Custom scroll behavior with inertia, smooth parallax as hell and scenes",
   "main": "dist/rolly.cjs.js",
   "module": "dist/rolly.esm.js",
   "browser": "dist/rolly.umd.js",
@@ -11,8 +10,12 @@
     "virtual-scroll": "^1.3.1"
   },
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
     "rollup": "^0.57.0",
-    "rollup-plugin-babel": "^3.0.3",
+    "rollup-plugin-babel": "^3.0.4",
     "rollup-plugin-commonjs": "^9.1.0",
     "rollup-plugin-node-resolve": "^3.0.0"
   },

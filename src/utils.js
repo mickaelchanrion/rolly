@@ -8,6 +8,24 @@ const utils = {
   getElements(selector, context = document) {
     const els = context.querySelectorAll(selector);
     return Array.prototype.slice.call(els, 0);
+  },
+
+  exportState(currentState) {
+    const state = { ...currentState };
+    const toExport = [
+      'current',
+      'previous',
+      'target',
+      'width',
+      'height',
+      'bounding'
+    ];
+
+    Object.keys(state)
+      .filter(key => !toExport.includes(key))
+      .forEach(key => delete state[key]);
+
+    return state;
   }
 };
 
