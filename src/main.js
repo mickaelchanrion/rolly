@@ -8,7 +8,7 @@ import Scenes from './Scenes';
 // Bad perfs in firefox?
 // Take a look at this ;)
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1427177
-export default class Rolly {
+class Rolly {
   /*
   ** Public methods
   */
@@ -510,7 +510,7 @@ const privated = {
   extendOptions(options) {
     const opts = this.options ? this.options : privated.getOptions.call(this);
     options.virtualScroll = { ...opts.virtualScroll, ...options.virtualScroll };
-    options.parallax = { ...opts.parallax, ...options.parallax };
+    options.parallax = { ...opts.parallax, ...options.parallax };
     options.scenes = { ...opts.scenes, ...options.scenes };
 
     return { ...opts, ...options };
@@ -651,3 +651,7 @@ const privated = {
     !this.state.rAF && privated.rAF.call(this);
   }
 };
+
+const rolly = (options) => new Rolly(options);
+
+export default rolly;

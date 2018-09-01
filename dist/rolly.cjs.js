@@ -149,7 +149,7 @@ var Parallax = function () {
               state: rollyState
             });
           } catch (error) {
-            var msg = 'ScrollManager.run: error occured while calling run function for parallax elements with type';
+            var msg = 'rolly.options.parallax.' + cache.type + '.run: an error occured while calling run function for parallax elements with type';
             console.error(msg + ' \'' + cache.type + '\'', error);
           }
         }
@@ -328,48 +328,41 @@ var Scenes = function () {
         cache.progress = _this.getProgress(current, rollySize, cache);
         var inView = _this.checkInView(current, rollySize, cache);
 
+        var sceneOptions = _this.options.scenes[cache.name] || {};
+
         // Check inView value changed
         if (cache.inView !== inView) {
           cache.inView = inView;
 
           if (inView) {
-            // Check appear
-            _this.options.scenes.onAppear && _this.options.scenes.onAppear.call(_this, cache, rollyState);
+            if (sceneOptions.appear) {
+              sceneOptions.appear.call(_this, cache, rollyState);
+            }
           } else {
-            // Check disappear
-            _this.options.scenes.onDisappear && _this.options.scenes.onDisappear.call(_this, cache, rollyState);
+            if (sceneOptions.disappear) {
+              sceneOptions.disappear.call(_this, cache, rollyState);
+            }
           }
         }
 
         if (inView) {
-          var sceneOptions = _this.options.scenes[cache.name] || {};
-
           // Check is entering
           if (_this.checkEnter(cache.active, cache.progress)) {
             cache.active = true;
-            console.log('onEnter ', cache.name);
-            _this.options.scenes.onEnter && _this.options.scenes.onEnter.call(_this, cache, rollyState);
-
-            if (sceneOptions.onEnter) {
-              sceneOptions.onEnter.call(_this, cache, rollyState);
+            if (sceneOptions.enter) {
+              sceneOptions.enter.call(_this, cache, rollyState);
             }
           } else if (_this.checkLeave(cache.active, cache.progress)) {
             // Check is leaving
             cache.active = false;
-            console.log('onLeave ', cache.name);
-            _this.options.scenes.onLeave && _this.options.scenes.onLeave.call(_this, cache, rollyState);
-
-            if (sceneOptions.onLeave) {
-              sceneOptions.onLeave.call(_this, cache, rollyState);
+            if (sceneOptions.leave) {
+              sceneOptions.leave.call(_this, cache, rollyState);
             }
           }
 
           // Run
-          if (_this.options.scenes.run) {
-            _this.options.scenes.run.call(_this, cache, rollyState);
-            if (sceneOptions.run) {
-              sceneOptions.run.call(_this, cache, rollyState);
-            }
+          if (sceneOptions.run) {
+            sceneOptions.run.call(_this, cache, rollyState);
           }
         }
       });
@@ -401,10 +394,9 @@ var Scenes = function () {
               offset += pageSize * parseFloat(trigger) / 100;
             }
       }
-      var progress = Math.round((offset - (vertical ? cache.top : cache.left)) * 100 / cache.size) / 100;
-      if (progress < 0 || progress > 1) progress = -1;
-      // if (progress < 0 || progress > 100) progress = -1;
 
+      var progress = (offset - (vertical ? cache.top : cache.left)) / cache.size;
+      if (progress < 0 || progress > 1) return -1;
       return progress;
     }
 
@@ -792,6 +784,12 @@ var Rolly = function () {
   }]);
   return Rolly;
 }();
+
+/*
+** Private methods
+*/
+
+
 var privated = {
   /**
    * Get all functions that needs to be bound with the Rolly's scope
@@ -1205,4 +1203,8 @@ var privated = {
   }
 };
 
-module.exports = Rolly;
+var rolly = function rolly(options) {
+  return new Rolly(options);
+};
+
+module.exports = rolly;

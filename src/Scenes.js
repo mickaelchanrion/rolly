@@ -46,53 +46,42 @@ class Scenes {
       cache.progress = this.getProgress(current, rollySize, cache);
       const inView = this.checkInView(current, rollySize, cache);
 
+      const sceneOptions = this.options.scenes[cache.name] || {};
+
       // Check inView value changed
       if (cache.inView !== inView) {
         cache.inView = inView;
 
         if (inView) {
-          // Check appear
-          this.options.scenes.onAppear &&
-            this.options.scenes.onAppear.call(this, cache, rollyState);
+          if (sceneOptions.appear) {
+            sceneOptions.appear.call(this, cache, rollyState);
+          }
         } else {
-          // Check disappear
-          this.options.scenes.onDisappear &&
-            this.options.scenes.onDisappear.call(this, cache, rollyState);
+          if (sceneOptions.disappear) {
+            sceneOptions.disappear.call(this, cache, rollyState);
+          }
         }
       }
 
       if (inView) {
-        const sceneOptions = this.options.scenes[cache.name] || {};
-
         // Check is entering
         if (this.checkEnter(cache.active, cache.progress)) {
           cache.active = true;
-          console.log('onEnter ', cache.name);
-          this.options.scenes.onEnter &&
-            this.options.scenes.onEnter.call(this, cache, rollyState);
-
-          if (sceneOptions.onEnter) {
-            sceneOptions.onEnter.call(this, cache, rollyState);
+          if (sceneOptions.enter) {
+            sceneOptions.enter.call(this, cache, rollyState);
           }
 
         } else if (this.checkLeave(cache.active, cache.progress)) {
           // Check is leaving
           cache.active = false;
-          console.log('onLeave ', cache.name);
-          this.options.scenes.onLeave &&
-            this.options.scenes.onLeave.call(this, cache, rollyState);
-
-          if (sceneOptions.onLeave) {
-            sceneOptions.onLeave.call(this, cache, rollyState);
+          if (sceneOptions.leave) {
+            sceneOptions.leave.call(this, cache, rollyState);
           }
         }
 
         // Run
-        if (this.options.scenes.run) {
-          this.options.scenes.run.call(this, cache, rollyState);
-          if (sceneOptions.run) {
-            sceneOptions.run.call(this, cache, rollyState);
-          }
+        if (sceneOptions.run) {
+          sceneOptions.run.call(this, cache, rollyState);
         }
       }
     });
@@ -121,12 +110,9 @@ class Scenes {
         offset += pageSize * parseFloat(trigger) / 100
       }
     }
-    let progress = Math.round(
-      (offset - (vertical ? cache.top : cache.left)) * 100 / cache.size
-    ) / 100;
-    if (progress < 0 || progress > 1) progress = -1;
-    // if (progress < 0 || progress > 100) progress = -1;
-
+    
+    let progress = (offset - (vertical ? cache.top : cache.left)) / cache.size;
+    if (progress < 0 || progress > 1) return -1;
     return progress;
   }
 

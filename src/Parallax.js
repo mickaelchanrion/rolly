@@ -62,7 +62,7 @@ class Parallax {
           });
         } catch (error) {
           const msg =
-            'ScrollManager.run: error occured while calling run function for parallax elements with type';
+            `rolly.options.parallax.${cache.type}.run: an error occured while calling run function for parallax elements with type`;
           console.error(`${msg} '${cache.type}'`, error);
         }
       }
