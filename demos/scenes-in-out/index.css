@@ -1,0 +1,21 @@
+body {
+  margin: 0;
+  background-color: #dedede;
+}
+
+.container {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scene {
+  margin: 50px 0;
+}
+
+.scene > div {
+  position: relative;
+  background-color: #fff;
+  padding: 20px;
+  will-change: opacity, transform;
+}
