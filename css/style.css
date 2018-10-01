@@ -18,7 +18,7 @@ body {
   overflow-x: scroll;
 }
 
-.rolly-section {
+.rolly-view {
   position: fixed;
   top: 0;
   right: 0;
@@ -26,21 +26,24 @@ body {
   width: 100%;
   height: auto;
   margin: auto;
+}
+
+[data-scene] {
   will-change: transform;
 }
 
-.rolly-scrollbar {
+.rolly-scroll-bar {
   display: block;
   position: absolute;
   transition: transform 0.6s ease-out;
   background: #efefef;
 }
 
-.rolly-scrollbar.is-hidden {
+.rolly-scroll-bar.is-hidden {
   display: none;
 }
 
-.rolly-scrollbar.rolly-vertical {
+.rolly-scroll-bar.rolly-vertical {
   top: 0;
   right: 0;
   bottom: 0;
@@ -50,7 +53,7 @@ body {
   transform-origin: right;
 }
 
-.rolly-scrollbar.rolly-horizontal {
+.rolly-scroll-bar.rolly-horizontal {
   bottom: 0;
   left: 0;
   right: 0;
@@ -60,12 +63,12 @@ body {
   transform-origin: bottom;
 }
 
-.is-dragging .rolly-scrollbar,
-.rolly-scrollbar:hover {
+.is-dragging .rolly-scroll-bar,
+.rolly-scroll-bar:hover {
   transform: none;
 }
 
-.rolly-scrollbar-thumb {
+.rolly-scroll-bar-thumb {
   width: 100%;
   height: auto;
   background: #ccc;

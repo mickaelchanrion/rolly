@@ -6,8 +6,7 @@ const utils = {
   },
 
   getElements(selector, context = document) {
-    const els = context.querySelectorAll(selector);
-    return Array.prototype.slice.call(els, 0);
+    return [...context.querySelectorAll(selector)];
   },
 
   exportState(currentState) {
@@ -18,7 +17,8 @@ const utils = {
       'target',
       'width',
       'height',
-      'bounding'
+      'bounding',
+      'transformPrefix',
     ];
 
     Object.keys(state)

@@ -1,5 +1,5 @@
-import prefix from 'prefix';
 import VirtualScroll from 'virtual-scroll';
+import prefix from 'prefix';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -62,12 +62,11 @@ var utils = {
   getElements: function getElements(selector) {
     var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
 
-    var els = context.querySelectorAll(selector);
-    return Array.prototype.slice.call(els, 0);
+    return [].concat(toConsumableArray(context.querySelectorAll(selector)));
   },
   exportState: function exportState(currentState) {
     var state = _extends({}, currentState);
-    var toExport = ['current', 'previous', 'target', 'width', 'height', 'bounding'];
+    var toExport = ['current', 'previous', 'target', 'width', 'height', 'bounding', 'transformPrefix'];
 
     Object.keys(state).filter(function (key) {
       return !toExport.includes(key);
@@ -79,435 +78,280 @@ var utils = {
   }
 };
 
-var Parallax = function () {
+var Scene = function () {
   /**
    * The constructor.
    * @constructor
    * @param {object} context - The DOM context.
    * @param {object} options - Options of Rolly.
    */
-  function Parallax(context, options) {
-    classCallCheck(this, Parallax);
+  function Scene(context, options) {
+    classCallCheck(this, Scene);
 
     this.options = options;
 
-    this.transformPrefix = prefix('transform');
+    this.state = {
+      caching: false,
+      cache: null,
+      inView: false,
+      active: false,
+      progress: 0,
+      progressInView: 0,
+      transform: 0
+    };
 
-    this.state = { caching: false, cache: null };
     this.DOM = { context: context };
-    this.DOM.els = utils.getElements(this.options.parallax.selector, context);
   }
 
   /**
-   * Reload parallax elements with new options.
-   * @param {object} options - Options of Rolly.
+   * A promise to get cache for the scene.
+   * The default cache object is as follow:
+   *   - context: the DOM element.
+   *   - name: the name of the scene.
+   *   - top: distance between the top of the view element and the top of
+   *     the element.
+   *   - bottom: distance between the top of the view element and the bottom
+   *     of the element.
+   *   - left: distance between the left of the view element and the left of
+   *     the element.
+   *   - right: distance between the left of the view element and the right
+   *     of the element.
+   *   - size: height of the element (or width on horizontal mode).
+   *   - speed: the speed of the scene.
+   *   - trigger: the trigger position (e.g: 'middle', 'bottom', '100px', '10%').
+   *
+   * The cache of the scene is extendable by providing a method at:
+   * `options.scenes.${sceneName}.cache`.
+   * This method provides an object that contains:
+   *   - cache: the computed cache so far.
+   *   - state: the state of the scene.
+   *   - globalState: the state of the Rolly instance
+   * Simply return new properties in an object to extend the cache.
+   *
+   * @param {object} globalState - The state of the Rolly instance.
    */
 
 
-  createClass(Parallax, [{
-    key: 'reload',
-    value: function reload(options) {
-      this.options = options;
-      this.DOM.els = utils.getElements(this.options.parallax.selector, this.DOM.context);
-    }
-
-    /**
-     * Animation frame callback (called at every frames).
-     * @param {object} rollyState - The state of Rolly instance.
-     */
-
-  }, {
-    key: 'run',
-    value: function run(rollyState) {
+  createClass(Scene, [{
+    key: 'cache',
+    value: function cache(globalState) {
       var _this = this;
 
-      this.DOM.els.forEach(function (el, index) {
-        if (!_this.state.cache || _this.state.caching) return;
-        var cache = _this.state.cache[index];
-        var current = rollyState.current;
+      return new Promise(function (resolve, reject) {
+        _this.state.caching = true;
 
-        if (!cache) return;
+        var vertical = _this.options.direction === 'vertical';
+        // TODO: see when we need this
+        // const scrollOffset = globalState.target;
+        var scrollOffset = 0;
 
-        // Set style for parallax element with type 'default'
-        if (cache.type === 'default') {
-          var _calc = _this.calc(cache, rollyState),
-              inView = _calc.inView,
-              transform = _calc.transform;
+        var context = _this.DOM.context;
 
-          if (inView) {
-            el.style[_this.transformPrefix] = utils.getCSSTransform(transform, _this.options.direction);
-          }
-        } else {
-          // Do other things for parallax element with other type
-          try {
-            _this.options.parallax[cache.type].run.call(_this, {
+        context.style.display = null;
+        var computedDisplay = window.getComputedStyle(context).display;
+        if (computedDisplay === 'none') {
+          return _this.state.cache = null;
+        }
+
+        if (computedDisplay === 'inline') {
+          context.style.display = 'block';
+        }
+
+        context.style[globalState.transformPrefix] = null;
+
+        var bounding = context.getBoundingClientRect();
+
+        var cache = {
+          context: context,
+          name: context.getAttribute('data-scene'),
+          top: vertical ? bounding.top + scrollOffset : bounding.top,
+          bottom: vertical ? bounding.bottom + scrollOffset : bounding.bottom,
+          left: vertical ? bounding.left : bounding.left + scrollOffset,
+          right: vertical ? bounding.right : bounding.right + scrollOffset,
+          size: vertical ? bounding.height : bounding.width,
+          speed: context.getAttribute('data-speed') || _this.options.scenes.speed,
+          trigger: context.getAttribute('data-trigger') || _this.options.scenes.trigger
+        };
+
+        var start = vertical ? cache.top + cache.size / 2 - globalState.height / 2 : cache.left + cache.size / 2 - globalState.width / 2;
+        cache.offset = start - start * cache.speed;
+
+        // Cache for custom scenes
+        if (_this.options.scenes[cache.name]) {
+          var getCache = _this.options.scenes[cache.name].cache;
+          if (getCache) {
+            var extendedCache = getCache.call(_this, {
               cache: cache,
-              state: rollyState
+              globalState: globalState,
+              sceneState: _this.state
             });
-          } catch (error) {
-            var msg = 'rolly.options.parallax.' + cache.type + '.run: an error occured while calling run function for parallax elements with type';
-            console.error(msg + ' \'' + cache.type + '\'', error);
+
+            cache = _extends({}, cache, extendedCache);
           }
         }
+
+        _this.state.cache = cache;
+        _this.state.caching = false;
+        resolve();
       });
     }
 
     /**
-     * Calculate usefull values for a parallax element.
-     * @param {object} cache - The cache of the parallax element.
-     * @param {object} rollyState - The state of Rolly instance.
+     * Animation frame callback (called at every frames).
+     * @param {object} globalState - The state of the Rolly instance.
+     */
+
+  }, {
+    key: 'run',
+    value: function run(globalState) {
+      if (!this.state.cache || this.state.caching) return false;
+
+      var viewSize = this.options.direction === 'vertical' ? globalState.height : globalState.width;
+      var _state = this.state,
+          cache = _state.cache,
+          active = _state.active;
+
+      var _calc = this.calc(globalState),
+          inView = _calc.inView,
+          transform = _calc.transform,
+          start = _calc.start;
+
+      this.state.progress = this.getProgress(transform, viewSize);
+      this.state.progressInView = this.getProgressInView(start, viewSize);
+
+      var sceneOptions = this.options.scenes[cache.name] || {};
+      var allScenesOptions = this.options.scenes['all'] || {};
+
+      // The data we send to every custom functions
+      var data = { globalState: globalState, sceneState: this.state, transform: transform };
+
+      // Check if inView value changed
+      if (this.state.inView !== inView) {
+
+        // Trigger appear/disappear callbacks
+        var action = inView ? 'appear' : 'disappear';
+        allScenesOptions[action] && allScenesOptions[action].call(this, data);
+        sceneOptions[action] && sceneOptions[action].call(this, data);
+
+        this.state.inView = inView;
+      }
+
+      // Check and then trigger enter/leave callbacks
+      if (inView) {
+        // Run
+        allScenesOptions.run && allScenesOptions.run.call(this, data);
+        sceneOptions.run && sceneOptions.run.call(this, data);
+
+        // Enter
+        if (this.checkEnter(active, this.state.progress)) {
+          this.state.active = true;
+          allScenesOptions.enter && allScenesOptions.enter.call(this, data);
+          sceneOptions.enter && sceneOptions.enter.call(this, data);
+        }
+
+        // Leave
+        else if (this.checkLeave(active, this.state.progress)) {
+            this.state.active = false;
+            allScenesOptions.leave && allScenesOptions.leave.call(this, data);
+            sceneOptions.leave && sceneOptions.leave.call(this, data);
+          }
+
+        // Transform
+        if (allScenesOptions.transform || sceneOptions.transform) {
+          allScenesOptions.transform && allScenesOptions.transform.call(this, data);
+          sceneOptions.transform && sceneOptions.transform.call(this, data);
+        } else {
+          this.DOM.context.style[globalState.transformPrefix] = utils.getCSSTransform(transform, this.options.direction);
+        }
+        this.DOM.context.style.visibility = null;
+      } else {
+        this.DOM.context.style.visibility = 'hidden';
+      }
+    }
+
+    /**
+     * Computes useful values for the scene.
+     * @param {object} globalState - The state of the Rolly instance
      * @return {object} Values as follow:
-     *   - transform: the transform value according to the element speed.
-     *   - start: distance between the start of screen and start of
-     *     element (top||left).
-     *   - end: distance between the start of screen and end of
-     *     element (bottom||right).
-     *   - inView: boolean that indicates whether the element is in the viewport.
+     * - transform: the transform value according to the speed
+     * - start: distance between the start position of the view and the start
+     * position of the scene context (top|left)
+     * - end: distance between the end position of the view and the end position
+     * of the scene context (bottom|right)
+     * - inView: whether the scene is in the viewport
      */
 
   }, {
     key: 'calc',
-    value: function calc(cache, rollyState) {
+    value: function calc(globalState) {
       var vertical = this.options.direction === 'vertical';
-      var top = cache.top,
-          right = cache.right,
-          bottom = cache.bottom,
-          left = cache.left,
-          size = cache.size,
-          speed = cache.speed;
-      var width = rollyState.width,
-          height = rollyState.height,
-          current = rollyState.current;
+      var _state$cache = this.state.cache,
+          top = _state$cache.top,
+          right = _state$cache.right,
+          bottom = _state$cache.bottom,
+          left = _state$cache.left,
+          speed = _state$cache.speed,
+          offset = _state$cache.offset;
+      var width = globalState.width,
+          height = globalState.height,
+          current = globalState.current;
 
 
-      var transform = ((vertical ? top : left) + size / 2 - current) * speed;
-      var start = Math.round((vertical ? top : left) + transform - current);
-      var end = Math.round((vertical ? bottom : right) + transform - current);
+      var transform = current * -speed - offset;
+
+      var start = Math.round((vertical ? top : left) + transform);
+      var end = Math.round((vertical ? bottom : right) + transform);
       var inView = end > 0 && start < (vertical ? height : width);
 
       return { transform: transform, start: start, end: end, inView: inView };
     }
 
     /**
-     * A promise to get cache for each parallax element.
-     * The default cache object is as follow:
-     *   - el: the DOM element.
-     *   - top: distance between the top of the context element and the top of
-     *     the element.
-     *   - bottom: distance between the top of the context element and the bottom
-     *     of the element.
-     *   - left: distance between the left of the context element and the left of
-     *     the element.
-     *   - right: distance between the left of the context element and the right
-     *     of the element.
-     *   - size: height of the element (or width on horizontal mode).
-     *   - speed: speed of the element.
-     *   - type: type of the element (default or something specified in
-     *     the 'data-parallax' attribute).
-     * @param {object} rollyState - The state of Rolly instance.
-     */
-
-  }, {
-    key: 'cache',
-    value: function cache(rollyState) {
-      var _this2 = this;
-
-      return new Promise(function (resolve, reject) {
-        _this2.state.caching = true;
-        _this2.state.cache = [];
-
-        var isVertical = _this2.options.direction === 'vertical';
-        var scrollOffset = rollyState.target;
-
-        _this2.DOM.els.forEach(function (el, index) {
-          el.style.display = null;
-          var computedDisplay = window.getComputedStyle(el).display;
-          if (computedDisplay === 'none') {
-            _this2.state.cache.push(null);
-            return;
-          }
-
-          if (computedDisplay === 'inline') {
-            el.style.display = 'block';
-          }
-          el.style[_this2.transformPrefix] = 'none';
-
-          var bounding = el.getBoundingClientRect();
-          var cache = {
-            el: el,
-            top: isVertical ? bounding.top + scrollOffset : bounding.top,
-            bottom: isVertical ? bounding.bottom + scrollOffset : bounding.bottom,
-            left: isVertical ? bounding.left : bounding.left + scrollOffset,
-            right: isVertical ? bounding.right : bounding.right + scrollOffset,
-            size: isVertical ? bounding.height : bounding.width,
-            speed: parseFloat(el.getAttribute('data-speed')) || -1,
-            type: el.getAttribute('data-parallax') || 'default'
-          };
-
-          // Set default style for parallax element with type 'default'
-          if (cache.type === 'default') {
-            var _calc2 = _this2.calc(cache, rollyState),
-                transform = _calc2.transform;
-
-            el.style[_this2.transformPrefix] = utils.getCSSTransform(transform, _this2.options.direction);
-          } else {
-            // Do custom things for parallax elements with custom type
-            if (_this2.options.parallax[cache.type]) {
-              var getCache = _this2.options.parallax[cache.type].getCache;
-              if (getCache) {
-                var extend = getCache.call(_this2, { cache: cache, state: rollyState });
-                cache = _extends({}, cache, extend);
-              }
-            }
-          }
-
-          _this2.state.cache.push(cache);
-        });
-
-        _this2.state.caching = false;
-        resolve();
-      });
-    }
-  }]);
-  return Parallax;
-}();
-
-var Scenes = function () {
-  /**
-   * The constructor.
-   * @constructor
-   * @param {object} context - The DOM context.
-   * @param {object} options - Options of Rolly.
-   */
-  function Scenes(context, options) {
-    classCallCheck(this, Scenes);
-
-    this.options = options;
-
-    this.state = { caching: false, cache: null };
-    this.DOM = { context: context };
-    this.DOM.els = utils.getElements(this.options.scenes.selector, context);
-  }
-
-  /**
-   * Reload scenes with new options.
-   * @param {object} options - Options of Rolly.
-   */
-
-
-  createClass(Scenes, [{
-    key: 'reload',
-    value: function reload(options) {
-      this.options = options;
-      this.DOM.els = utils.getElements(this.options.scenes.selector, this.DOM.context);
-    }
-
-    /**
-     * Animation frame callback (called at every frames).
-     * @param {object} rollyState - The state of Rolly instance.
-     */
-
-  }, {
-    key: 'run',
-    value: function run(rollyState) {
-      var _this = this;
-
-      this.DOM.els.forEach(function (el, index) {
-        if (!_this.state.cache || _this.state.caching) return;
-
-        var current = rollyState.current;
-        var rollySize = _this.options.direction === 'vertical' ? rollyState.height : rollyState.width;
-        var cache = _this.state.cache[index];
-
-        if (!cache) return;
-
-        cache.progress = _this.getProgress(current, rollySize, cache);
-        var inView = _this.checkInView(current, rollySize, cache);
-
-        var sceneOptions = _this.options.scenes[cache.name] || {};
-
-        // Check inView value changed
-        if (cache.inView !== inView) {
-          cache.inView = inView;
-
-          if (inView) {
-            if (sceneOptions.appear) {
-              sceneOptions.appear.call(_this, cache, rollyState);
-            }
-          } else {
-            if (sceneOptions.disappear) {
-              sceneOptions.disappear.call(_this, cache, rollyState);
-            }
-          }
-        }
-
-        if (inView) {
-          // Check is entering
-          if (_this.checkEnter(cache.active, cache.progress)) {
-            cache.active = true;
-            if (sceneOptions.enter) {
-              sceneOptions.enter.call(_this, cache, rollyState);
-            }
-          } else if (_this.checkLeave(cache.active, cache.progress)) {
-            // Check is leaving
-            cache.active = false;
-            if (sceneOptions.leave) {
-              sceneOptions.leave.call(_this, cache, rollyState);
-            }
-          }
-
-          // Run
-          if (sceneOptions.run) {
-            sceneOptions.run.call(_this, cache, rollyState);
-          }
-        }
-      });
-    }
-
-    /**
-     * Get the progress position of the scenes in relation to the trigger
+     * Gets the progress position of the scene in relation to the trigger
      * (default trigger position is 'middle').
-     * @param {number} current - The current position of scroll.
-     * @param {number} rollySize - The size of the context element.
-     * @param {object} cache - The cache of the scene.
+     * @param {number} transform - The transform position of the scene.
+     * @param {number} viewSize - The size of the view.
      * @return {number} The progress position.
      */
 
   }, {
     key: 'getProgress',
-    value: function getProgress(current, pageSize, cache) {
+    value: function getProgress(transform, viewSize) {
       var vertical = this.options.direction === 'vertical';
-
-      var offset = current;
+      var cache = this.state.cache;
       var trigger = cache.trigger;
 
-      if (trigger && typeof trigger === 'string') {
-        if (trigger === 'middle') offset += pageSize / 2;else if (trigger === 'end') offset += pageSize;
-        // px from top
-        else if (trigger.slice(-2) === 'px') offset += parseFloat(trigger);
-          // percentage
-          else if (trigger.slice(-1) === '%') {
-              offset += pageSize * parseFloat(trigger) / 100;
-            }
-      }
 
-      var progress = (offset - (vertical ? cache.top : cache.left)) / cache.size;
+      var position = -transform;
+
+      if (trigger === 'middle') position += viewSize / 2;else if (trigger === 'end') position += viewSize;
+      // px from top
+      else if (trigger.slice(-2) === 'px') position += parseFloat(trigger);
+        // percentage
+        else if (trigger.slice(-1) === '%') {
+            position += viewSize * parseFloat(trigger) / 100;
+          }
+
+      var progress = (position - (vertical ? cache.top : cache.left)) / cache.size;
+
       if (progress < 0 || progress > 1) return -1;
       return progress;
     }
 
     /**
-     * A promise to get cache for each scene.
-     * The default cache object is as follow:
-     *   - el: the DOM element.
-     *   - name: the name of the scene.
-     *   - size: the size of the size.
-     *   - top: distance between the top of the context element and the top of
-     *     the element.
-     *   - bottom: distance between the top of the context element and the bottom
-     *     of the element.
-     *   - left: distance between the left of the context element and the left of
-     *     the element.
-     *   - right: distance between the left of the context element and the right
-     *     of the element.
-     *   - size: height of the element (or width on horizontal mode).
-     *   - trigger: the trigger position
-     *     (e.g: 'middle', 'bottom', '100px', '10%').
-     *   - inView: whether the scene is into the viewport.
-     *   - progress: the progress position of the scene related to the trigger.
-     * @param {object} rollyState - The state of Rolly instance.
+     * Gets the progress position of the scene in relation to the viewport.
+     * @param {number} start - The distance between the start position of the view and the start.
+     * @param {*} viewSize - The size of the view.
      */
 
   }, {
-    key: 'cache',
-    value: function cache(rollyState) {
-      var _this2 = this;
-
-      return new Promise(function (resolve, reject) {
-        _this2.state.caching = true;
-        _this2.state.cache = [];
-
-        var isVertical = _this2.options.direction === 'vertical';
-        var scrollOffset = rollyState.target;
-
-        _this2.DOM.els.forEach(function (el, index) {
-          el.style.display = null;
-          var computedDisplay = window.getComputedStyle(el).display;
-          if (computedDisplay === 'none') {
-            _this2.state.cache.push(null);
-            return;
-          }
-
-          if (computedDisplay === 'inline') {
-            el.style.display = 'block';
-          }
-
-          var bounding = el.getBoundingClientRect();
-          var cache = {
-            el: el,
-            name: el.getAttribute('data-scene'),
-            top: isVertical ? bounding.top + scrollOffset : bounding.top,
-            bottom: isVertical ? bounding.bottom + scrollOffset : bounding.bottom,
-            left: isVertical ? bounding.left : bounding.left + scrollOffset,
-            right: isVertical ? bounding.right : bounding.right + scrollOffset,
-            size: isVertical ? bounding.height : bounding.width,
-            trigger: el.getAttribute('data-trigger') || _this2.options.scenes.trigger,
-            inView: false,
-            progress: 0
-          };
-
-          // Do custom things for scenes
-          if (_this2.options.scenes[cache.name]) {
-            var getCache = _this2.options.scenes[cache.name].getCache;
-            if (getCache) {
-              var extend = getCache.call(_this2, { cache: cache, state: rollyState });
-              cache = _extends({}, cache, extend);
-            }
-          }
-
-          _this2.state.cache.push(cache);
-        });
-
-        _this2.state.caching = false;
-        resolve();
-      });
+    key: 'getProgressInView',
+    value: function getProgressInView(start, viewSize) {
+      return (viewSize - start) / (viewSize + this.state.cache.size);
     }
 
-    /*
-    ** Checkers
-    */
-
     /**
-     * Check if the scene is into the viewport.
-     * @param {number} current - The current scroll position.
-     * @param {number} rollySize - The size of the context element.
-     * @param {object} cache - The cache of the scene.
-     * @return {boolean} The result.
-     */
-
-  }, {
-    key: 'checkInView',
-    value: function checkInView(current, rollySize, cache) {
-      var vertical = this.options.direction === 'vertical';
-      var top = cache.top,
-          right = cache.right,
-          bottom = cache.bottom,
-          left = cache.left,
-          size = cache.size;
-
-
-      var start = Math.round((vertical ? top : left) - current);
-      var end = Math.round((vertical ? bottom : right) - current);
-      return end > 0 && start < rollySize;
-    }
-    /*
-    const top = Math.round(cache.top - current);
-    const bottom = Math.round(cache.bottom - current);
-    return bottom > 0 && top < height;
-     */
-
-    /**
-     * Check if the trigger met the scene.
+     * Checks if the trigger met the scene.
      * @param {boolean} active - Whether the scene is active.
      * @param {number} progress - The progress position of the scene related
      * to the trigger
@@ -521,7 +365,7 @@ var Scenes = function () {
     }
 
     /**
-     * Check if the trigger left the scene.
+     * Checks if the trigger left the scene.
      * @param {boolean} active - Whether the scene is active.
      * @param {number} progress - The progress position of the scene related
      * to the trigger
@@ -534,7 +378,250 @@ var Scenes = function () {
       return active && progress === -1;
     }
   }]);
-  return Scenes;
+  return Scene;
+}();
+
+var ScrollBar = function () {
+  /**
+   * The constructor.
+   * @constructor
+   * @param {object} parent - The parent DOM of the scroll bar.
+   * @param {object} globalState - The state of the Rolly instance.
+   * @param {function} setTarget - The {@link Rolly#setTarget} method.
+   * @param {object} options - Options of Rolly.
+   */
+  function ScrollBar(parent, globalState, setTarget, options) {
+    classCallCheck(this, ScrollBar);
+
+    this.options = options;
+
+    this.DOM = this.render(parent);
+
+    this.state = {
+      clicked: false,
+      thumb: { size: 0 }
+    };
+
+    this.cache(globalState);
+
+    this.setTarget = setTarget;
+  }
+
+  /**
+   * Sets cache for scroll bar.
+   * @param {object} globalState - The state of the Rolly instance.
+   */
+
+
+  createClass(ScrollBar, [{
+    key: 'cache',
+    value: function cache(globalState) {
+      this.state.cache = {
+        bounding: globalState.bounding,
+        viewSize: this.options.direction === 'vertical' ? globalState.height : globalState.width
+      };
+      this.updateThumbSize();
+    }
+
+    /**
+     * Animation frame callback (called at every frames).
+     * @param {object} globalState - The state of the Rolly instance.
+     */
+
+  }, {
+    key: 'run',
+    value: function run(_ref) {
+      var current = _ref.current,
+          transformPrefix = _ref.transformPrefix;
+      var _state$cache = this.state.cache,
+          bounding = _state$cache.bounding,
+          viewSize = _state$cache.viewSize;
+
+      var value = Math.abs(current) / (bounding / (viewSize - this.thumbSize)) + this.thumbSize / 0.5 - this.thumbSize;
+      var clamp = Math.max(0, Math.min(value - this.thumbSize, value + this.thumbSize));
+      this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(clamp.toFixed(2), this.options.direction);
+    }
+
+    /**
+     * Computes the target value from the scroll bar (based on event client viewport position).
+     * @param {number} client - The client position.
+     * @return {number} The target.
+     */
+
+  }, {
+    key: 'calc',
+    value: function calc(client) {
+      return client * (this.state.cache.bounding / this.state.cache.viewSize);
+    }
+
+    /**
+     * Renders the scroll bar.
+     * @param {object} parent - The parent DOM of the scroll bar.
+     * @return {object} - The list of DOM elements (parent, context, thumb).
+     */
+
+  }, {
+    key: 'render',
+    value: function render(parent) {
+      var context = document.createElement('div');
+      context.className = 'rolly-scroll-bar rolly-' + this.options.direction;
+
+      var thumb = document.createElement('div');
+      thumb.className = 'rolly-scroll-bar-thumb';
+
+      context.appendChild(thumb);
+      parent.appendChild(context);
+
+      return { parent: parent, context: context, thumb: thumb };
+    }
+
+    /**
+     * Starts listening events (mouse interactions).
+     */
+
+  }, {
+    key: 'on',
+    value: function on() {
+      this.boundFns = {
+        click: this.click.bind(this),
+        mouseDown: this.mouseDown.bind(this),
+        mouseMove: this.mouseMove.bind(this),
+        mouseUp: this.mouseUp.bind(this)
+      };
+
+      this.DOM.context.addEventListener('click', this.boundFns.click);
+      this.DOM.context.addEventListener('mousedown', this.boundFns.mouseDown);
+
+      document.addEventListener('mousemove', this.boundFns.mouseMove);
+      document.addEventListener('mouseup', this.boundFns.mouseUp);
+    }
+
+    /**
+     * Stops listening events (mouse interactions).
+     */
+
+  }, {
+    key: 'off',
+    value: function off() {
+      if (!this.boundFns) return false;
+      this.DOM.context.removeEventListener('click', this.boundFns.click);
+      this.DOM.context.removeEventListener('mousedown', this.boundFns.mouseDown);
+
+      document.removeEventListener('mousemove', this.boundFns.mouseMove);
+      document.removeEventListener('mouseup', this.boundFns.mouseUp);
+      delete this.boundFns;
+    }
+
+    /**
+     * Click event callback.
+     * @param {object} event - The event data.
+     */
+
+  }, {
+    key: 'click',
+    value: function click(event) {
+      var value = this.calc(this.options.direction == 'vertical' ? event.clientY : event.clientX);
+      this.setTarget(value);
+    }
+
+    /**
+     * Mouse down event callback.
+     * @param {object} event - The event data.
+     */
+
+  }, {
+    key: 'mouseDown',
+    value: function mouseDown(event) {
+      event.preventDefault();
+      if (event.which === 1) {
+        this.state.clicked = true;
+      }
+      this.DOM.parent.classList.add('is-dragging');
+    }
+
+    /**
+     * Mouse move event callback.
+     * @param {object} event - The event data.
+     */
+
+  }, {
+    key: 'mouseMove',
+    value: function mouseMove(event) {
+      if (this.state.clicked) {
+        var value = this.calc(this.options.direction == 'vertical' ? event.clientY : event.clientX);
+        this.setTarget(value);
+      }
+    }
+
+    /**
+     * Mouse up event callback.
+     * @param {object} event - The event data.
+     */
+
+  }, {
+    key: 'mouseUp',
+    value: function mouseUp(event) {
+      this.state.clicked = false;
+      this.DOM.parent.classList.remove('is-dragging');
+    }
+
+    /**
+     * Gets the size of the thumb (heigh or width on horizontal mode).
+     * @return {number} - The size of the thumb.
+     */
+
+  }, {
+    key: 'updateThumbSize',
+
+
+    /**
+     * Updates the size of the thumb.
+     * This method is called when the content changes or on a resize for instance.
+     */
+    value: function updateThumbSize() {
+      var bounding = this.state.cache.bounding;
+
+      if (bounding <= 0) {
+        this.DOM.context.classList.add('is-hidden');
+        return this.thumbSize = 0;
+      }
+
+      this.DOM.context.classList.remove('is-hidden');
+      var viewSize = this.state.cache.viewSize;
+
+      return this.thumbSize = viewSize * (viewSize / (bounding + viewSize));
+    }
+
+    /**
+     * Destroy the scroll bar.
+     * - removes from the DOM.
+     * - calls {@link ScrollBar#off}.
+     */
+
+  }, {
+    key: 'destroy',
+    value: function destroy() {
+      this.off();
+      this.DOM.parent.removeChild(this.DOM.context);
+    }
+  }, {
+    key: 'thumbSize',
+    get: function get$$1() {
+      return this.state.thumb.size;
+    }
+
+    /**
+     * Sets the size of the thumb (heigh or width on horizontal mode).
+     * @param {number} - The size of the thumb.
+     */
+    ,
+    set: function set$$1(size) {
+      this.state.thumb.size = size;
+      var prop = this.options.direction === 'vertical' ? 'height' : 'width';
+      this.DOM.thumb.style[prop] = size + 'px';
+    }
+  }]);
+  return ScrollBar;
 }();
 
 // Bad perfs in firefox?
@@ -560,35 +647,29 @@ var Rolly = function () {
     // Extend default options
     this.options = privated.extendOptions.call(this, options);
 
-    this.transformPrefix = prefix('transform');
-
     this.DOM = {
       listener: this.options.listener,
-      section: this.options.section
+      view: this.options.view
     };
 
-    if (this.options.parallax) {
-      this.parallax = new Parallax(this.DOM.section, this.options);
-    }
-
-    if (this.options.scenes) {
-      this.scenes = new Scenes(this.DOM.section, this.options);
-    }
+    privated.initScenes.call(this);
   }
 
   /**
-   * Initialize the Rolly instance.
-   * - add DOM classes,
-   * - create fake scroll bar or fake height depending on scroll type
-   * (native|virtual),
-   * - call {@link Rolly#on}.
+   * Initializes the Rolly instance.
+   * - adds DOM classes.
+   * - if native, adds fake height.
+   * - else if `options.noScrollBar` is false, adds a fake scroll bar.
+   * - calls {@link Rolly#on}.
    */
 
 
   createClass(Rolly, [{
     key: 'init',
     value: function init() {
-      // Instantiate virtual scroll native option is falsy
+      var _this = this;
+
+      // Instantiate virtual scroll native option is false
       this.virtualScroll = this.options.native ? null : new VirtualScroll(this.options.virtualScroll);
 
       privated.initState.call(this);
@@ -598,18 +679,24 @@ var Rolly = function () {
 
       this.DOM.listener.classList.add('is-' + type + '-scroll');
       this.DOM.listener.classList.add(direction + '-scroll');
-      this.DOM.section.classList.add('rolly-section');
+      this.DOM.view.classList.add('rolly-view');
 
-      this.options.preload && privated.preloadImages.call(this, this.boundFns.resize);
-      this.options.native ? privated.addFakeScrollHeight.call(this) : !this.options.noSrollbar && privated.addFakeScrollBar.call(this);
+      if (this.options.preload) privated.preloadImages.call(this, function () {
+        _this.state.preloaded = true;
+        _this.boundFns.resize();
+        privated.ready.call(_this);
+      });
+
+      this.options.native ? privated.addFakeScrollHeight.call(this) : !this.options.noScrollBar && privated.addFakeScrollBar.call(this);
 
       this.on();
     }
 
     /**
-     * Enable the Rolly instance.
-     * - start listening events (scroll and resize),
-     * - request an animation frame if {@param rAF} is truthy.
+     * Enables the Rolly instance.
+     * - starts listening events (scroll and resize),
+     * - requests an animation frame if {@param rAF} is true.
+     * @param {boolean} rAF - whether request an animation frame.
      */
 
   }, {
@@ -624,16 +711,24 @@ var Rolly = function () {
         this.virtualScroll.on(this.boundFns.virtualScroll);
       }
 
+      if (this.scrollBar) {
+        this.scrollBar.on();
+      }
+
       rAF && privated.rAF.call(this);
 
       privated.resize.call(this);
       window.addEventListener('resize', this.boundFns.resize);
+
+      this.state.ready = true;
+      privated.ready.call(this);
     }
 
     /**
-     * Disable the Rolly instance.
-     * - stop listening events (scroll and resize),
-     * - canceled any requested animation frame if {@param cAF} is truthy.
+     * Disables the Rolly instance.
+     * - stops listening events (scroll and resize),
+     * - cancels any requested animation frame if {@param cAF} is true.
+     * @param {boolean} cAF - whether cancel a requested animation frame.
      */
 
   }, {
@@ -648,17 +743,22 @@ var Rolly = function () {
         this.virtualScroll.off(this.boundFns.virtualScroll);
       }
 
+      if (this.scrollBar) {
+        this.scrollBar.off();
+      }
+
       cAF && privated.cAF.call(this);
 
       window.removeEventListener('resize', this.boundFns.resize);
+      this.state.ready = false;
     }
 
     /**
-     * Destroy the Rolly instance.
-     * - remove DOM classes,
-     * - remove fake scroll bar or fake height depending on scroll type
-     * (native|virtual),
-     * - call {@link Rolly#off}.
+     * Destroys the Rolly instance.
+     * - removes DOM classes.
+     * - if native, removes fake height.
+     * - else if `options.noScrollBar` is false, removes a fake scroll bar.
+     * - calls {@link Rolly#off}.
      */
 
   }, {
@@ -669,26 +769,24 @@ var Rolly = function () {
 
       this.DOM.listener.classList.remove('is-' + type + '-scroll');
       this.DOM.listener.classList.remove(direction + '-scroll');
-      this.DOM.section.classList.remove('rolly-section');
-
-      this.options.native ? privated.removeFakeScrollHeight.call(this) : !this.options.noSrollbar && privated.removeFakeScrollBar.call(this);
-
-      // this.state.current = 0;
+      this.DOM.view.classList.remove('rolly-view');
 
       this.virtualScroll && (this.virtualScroll.destroy(), this.virtualScroll = null);
 
       this.off();
+
+      this.options.native ? privated.removeFakeScrollHeight.call(this) : !this.options.noScrollBar && privated.removeFakeScrollBar.call(this);
     }
 
     /**
-     * Reload the Rolly instance with new options.
+     * Reloads the Rolly instance with new options.
      * @param {object} options - Options of Rolly.
      */
 
   }, {
     key: 'reload',
     value: function reload() {
-      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.options;
 
       this.destroy();
 
@@ -699,17 +797,16 @@ var Rolly = function () {
 
       this.DOM = {
         listener: this.options.listener,
-        section: this.options.section
+        view: this.options.view
       };
 
-      this.parallax && this.parallax.reload(options);
-      this.scenes && this.scenes.reload(options);
+      privated.initScenes.call(this);
 
       this.init();
     }
 
     /**
-     * Scroll to a target (number|DOM element).
+     * Scrolls to a target (number|DOM element).
      * @param {number|object} target - The target to scroll.
      * @param {object} options - Options.
      */
@@ -724,13 +821,13 @@ var Rolly = function () {
       };
       options = _extends({}, defaultOptions, options);
 
-      var isVertical = this.options.direction === 'vertical';
+      var vertical = this.options.direction === 'vertical';
       var scrollOffset = this.state.current;
       var bounding = null;
       var newPos = scrollOffset + options.offset;
 
       if (typeof target === 'string') {
-        target = document.querySelector(target);
+        target = utils.getElements(target)[0];
       }
 
       switch (typeof target === 'undefined' ? 'undefined' : _typeof(target)) {
@@ -741,17 +838,17 @@ var Rolly = function () {
         case 'object':
           if (!target) return;
           bounding = target.getBoundingClientRect();
-          newPos += isVertical ? bounding.top : bounding.left;
+          newPos += vertical ? bounding.top : bounding.left;
           break;
       }
 
       switch (options.position) {
         case 'center':
-          newPos -= isVertical ? this.state.height / 2 : this.state.width / 2;
+          newPos -= vertical ? this.state.height / 2 : this.state.width / 2;
           break;
 
         case 'end':
-          newPos -= isVertical ? this.state.height : this.state.width;
+          newPos -= vertical ? this.state.height : this.state.width;
           break;
       }
 
@@ -759,6 +856,7 @@ var Rolly = function () {
         this.state.scrollTo.callback = options.callback;
       }
 
+      // FIXME: if the scrollable element is not the body, this won't work
       if (this.options.native) {
         this.options.direction === 'vertical' ? window.scrollTo(0, newPos) : window.scrollTo(newPos, 0);
       } else {
@@ -767,9 +865,9 @@ var Rolly = function () {
     }
 
     /**
-     * Update the states and re-setup all the cache of the Rolly instance.
-     * Usefull if the width/height of the section has changed.
-     * - call {@link Rolly#resize}.
+     * Updates the states and re-setup all the cache of the Rolly instance.
+     * Useful if the width/height of the view changed.
+     * - calls {@link Rolly#resize}.
      */
 
   }, {
@@ -788,21 +886,21 @@ var Rolly = function () {
 
 var privated = {
   /**
-   * Get all functions that needs to be bound with the Rolly's scope
+   * Gets all functions that needs to be bound with the Rolly's scope
    */
   getBoundFns: function getBoundFns() {
-    var _this = this;
+    var _this2 = this;
 
     var fns = {};
-    ['resize', 'debounceScroll', 'virtualScroll', 'calcScroll', 'mouseDown', 'mouseMove', 'mouseUp'].map(function (fn) {
-      return fns[fn] = privated[fn].bind(_this);
+    ['resize', 'debounceScroll', 'virtualScroll'].map(function (fn) {
+      return fns[fn] = privated[fn].bind(_this2);
     });
     return fns;
   },
 
 
   /**
-   * Initialize the state of the Rolly instance.
+   * Initializes the state of the Rolly instance.
    */
   initState: function initState() {
     this.state = {
@@ -810,9 +908,11 @@ var privated = {
       current: 0,
       previous: 0,
       target: 0,
-      width: window.innerWidht,
+      width: window.innerWidth,
       height: window.innerHeight,
       bounding: 0,
+      ready: false,
+      preloaded: false,
 
       // Animation frame
       rAF: undefined,
@@ -830,9 +930,23 @@ var privated = {
       // Scroll to
       scrollTo: {},
 
-      // Virtual scroll
-      scrollbar: null
+      // The transform property to use
+      transformPrefix: prefix('transform')
     };
+  },
+
+
+  /**
+   * Initializes scenes
+   */
+  initScenes: function initScenes() {
+    var _this3 = this;
+
+    this.scenes = [];
+
+    utils.getElements(this.options.scenes.selector, this.DOM.view).forEach(function (scene) {
+      return _this3.scenes.push(new Scene(scene, _this3.options));
+    });
   },
 
 
@@ -851,8 +965,7 @@ var privated = {
     var diff = this.state.target - this.state.current;
     var delta = diff * this.options.ease;
 
-    // If diff between target and current states is < 0.1,
-    // stop running animation
+    // If diff between target and current states is < 0.1, stop running animation
     if (Math.abs(diff) < 0.1) {
       privated.cAF.call(this);
       delta = 0;
@@ -868,16 +981,9 @@ var privated = {
       this.state.scrollTo.callback = null;
     }
 
-    // Set section position
-    this.DOM.section.style[this.transformPrefix] = utils.getCSSTransform(-this.state.current, this.options.direction);
-
-    // Set scrollbar thumb position
-    if (!this.options.native && !this.options.noScrollbar) {
-      var size = this.state.scrollbar.thumb.size;
-      var bounds = this.options.direction === 'vertical' ? this.state.height : this.state.width;
-      var value = Math.abs(this.state.current) / (this.state.bounding / (bounds - size)) + size / 0.5 - size;
-      var clamp = Math.max(0, Math.min(value - size, value + size));
-      this.DOM.scrollbarThumb.style[this.transformPrefix] = utils.getCSSTransform(clamp.toFixed(2), this.options.direction);
+    // Set scroll bar thumb position
+    if (this.scrollBar) {
+      this.scrollBar.run(this.state);
     }
 
     // Call custom run
@@ -885,11 +991,9 @@ var privated = {
       this.options.run(exportedState);
     }
 
-    // Parallax elements
-    this.parallax && this.parallax.run(exportedState);
-
-    // Scenes
-    this.scenes && this.scenes.run(exportedState);
+    this.scenes.forEach(function (scene) {
+      return scene.run(exportedState);
+    });
 
     this.state.previous = this.state.current;
   },
@@ -913,23 +1017,23 @@ var privated = {
   },
 
 
-  /**
-   * Calculate the target from scroll bar.
-   * @param {object} e - The event data.
-   */
-  calcScroll: function calcScroll(e) {
-    var client = this.options.direction == 'vertical' ? e.clientY : e.clientX;
-    var bounds = this.options.direction == 'vertical' ? this.state.height : this.state.width;
-    var delta = client * (this.state.bounding / bounds);
-
-    privated.setTarget.call(this, delta);
-    this.DOM.scrollbar && (this.state.scrollbar.thumb.delta = delta);
-  },
-
-
   /*
   ** Events
   */
+
+  /**
+   * Checks if Rolly is ready.
+   */
+  ready: function ready() {
+    if (this.state.ready && (this.options.preload ? this.state.preloaded : true)) {
+      if (this.options.ready) {
+        this.options.ready(this.state);
+      }
+      return true;
+    }
+    return false;
+  },
+
 
   /**
    * Virtual scroll event callback.
@@ -947,7 +1051,7 @@ var privated = {
    * @param {object} e - The event data.
    */
   debounceScroll: function debounceScroll(e) {
-    var _this2 = this;
+    var _this4 = this;
 
     if (this.state.scrollTo.callback) return;
     var isWindow = this.DOM.listener === document.body;
@@ -964,8 +1068,8 @@ var privated = {
     }
 
     this.state.debounceScroll.timer = setTimeout(function () {
-      _this2.state.debounceScroll.tick = false;
-      _this2.DOM.listener.classList.remove('is-scrolling');
+      _this4.state.debounceScroll.tick = false;
+      _this4.DOM.listener.classList.remove('is-scrolling');
     }, 200);
   },
 
@@ -975,69 +1079,29 @@ var privated = {
    * @param {object} e - The event data.
    */
   resize: function resize(e) {
+    var _this5 = this;
+
     var prop = this.options.direction === 'vertical' ? 'height' : 'width';
     this.state.height = window.innerHeight;
     this.state.width = window.innerWidth;
 
     // Calc bounding
-    var bounding = this.DOM.section.getBoundingClientRect();
+    var bounding = this.DOM.view.getBoundingClientRect();
     this.state.bounding = this.options.direction === 'vertical' ? bounding.height - (this.options.native ? 0 : this.state.height) : bounding.right - (this.options.native ? 0 : this.state.width);
 
-    // Set scrollbar thumb height (according to section height)
-    if (!this.options.native && !this.options.noSrollbar) {
-      if (this.state.bounding <= 0) {
-        this.state.scrollbar.thumb.size = 0;
-        this.DOM.scrollbar.classList.add('is-hidden');
-      } else {
-        this.DOM.scrollbar.classList.remove('is-hidden');
-        var size = this.state.height * (this.state.height / (this.state.bounding + this.state.height));
-        // console.log('size', size);
-        // console.log(this.state);
-        // console.log(bounding);
-        this.DOM.scrollbarThumb.style[prop] = size + 'px';
-        this.state.scrollbar.thumb.size = size;
-      }
+    // Set scroll bar thumb height (according to view height)
+    if (this.scrollBar) {
+      this.scrollBar.cache(this.state);
     } else if (this.options.native) {
       this.DOM.scroll.style[prop] = this.state.bounding + 'px';
     }
 
-    !this.options.native && privated.setTarget.call(this, this.state.target);
-
-    // Get cache for parallax elements
-    this.parallax && this.parallax.cache(this.state);
+    privated.setTarget.call(this, this.state.target);
 
     // Get cache for scenes
-    this.scenes && this.scenes.cache(this.state);
-  },
-
-
-  /**
-   * Mouse down event callback.
-   * @param {object} e - The event data.
-   */
-  mouseDown: function mouseDown(e) {
-    e.preventDefault();
-    e.which === 1 && (this.state.scrollbar.clicked = true);
-    this.DOM.listener.classList.add('is-dragging');
-  },
-
-
-  /**
-   * Mouse move event callback.
-   * @param {object} e - The event data.
-   */
-  mouseMove: function mouseMove(e) {
-    this.state.scrollbar.clicked && privated.calcScroll.call(this, e);
-  },
-
-
-  /**
-   * Mouse up event callback.
-   * @param {object} e - The event data.
-   */
-  mouseUp: function mouseUp(e) {
-    this.state.scrollbar.clicked = false;
-    this.DOM.listener.classList.remove('is-dragging');
+    this.scenes.forEach(function (scene) {
+      return scene.cache(_this5.state);
+    });
   },
 
 
@@ -1046,14 +1110,13 @@ var privated = {
   */
 
   /**
-   * Extend options.
+   * Extends options.
    * @param {object} options - The options to extend.
    * @return {object} The extended options.
    */
   extendOptions: function extendOptions(options) {
-    var opts = this.options ? this.options : privated.getOptions.call(this);
+    var opts = this.options ? this.options : privated.getDefaults.call(this);
     options.virtualScroll = _extends({}, opts.virtualScroll, options.virtualScroll);
-    options.parallax = _extends({}, opts.parallax, options.parallax);
     options.scenes = _extends({}, opts.scenes, options.scenes);
 
     return _extends({}, opts, options);
@@ -1061,20 +1124,25 @@ var privated = {
 
 
   /**
-   * Preload images in the section of the Rolly instance.
-   * Useful if the section contains images that might not have fully loaded
+   * Preload images in the view of the Rolly instance.
+   * Useful if the view contains images that might not have fully loaded
    * when the instance is created (because when an image is loaded, the
    * total height changes).
    * @param {function} callback - The function to run when images are loaded.
    */
   preloadImages: function preloadImages(callback) {
-    var images = [].concat(toConsumableArray(this.DOM.listener.querySelectorAll('img')));
+    var images = utils.getElements('img', this.DOM.listener);
+
+    if (!images.length) {
+      if (callback) callback();
+      return;
+    }
 
     images.forEach(function (image) {
       var img = document.createElement('img');
-      img.onload = function (_) {
+      img.onload = function () {
         images.splice(images.indexOf(image), 1);
-        images.length === 0 && callback && callback();
+        if (images.length === 0) callback();
       };
 
       img.src = image.getAttribute('src');
@@ -1083,7 +1151,7 @@ var privated = {
 
 
   /**
-   * Add a fake scroll height.
+   * Adds a fake scroll height.
    */
   addFakeScrollHeight: function addFakeScrollHeight() {
     var scroll = document.createElement('div');
@@ -1094,7 +1162,7 @@ var privated = {
 
 
   /**
-   * Remove a fake scroll height.
+   * Removes a fake scroll height.
    */
   removeFakeScrollHeight: function removeFakeScrollHeight() {
     this.DOM.listener.removeChild(this.DOM.scroll);
@@ -1102,45 +1170,18 @@ var privated = {
 
 
   /**
-   * Add a fake scroll bar.
+   * Adds a fake scroll bar.
    */
   addFakeScrollBar: function addFakeScrollBar() {
-    var scrollbar = document.createElement('div');
-    scrollbar.className = 'rolly-scrollbar rolly-' + this.options.direction;
-    this.DOM.scrollbar = scrollbar;
-
-    var scrollbarThumb = document.createElement('div');
-    scrollbarThumb.className = 'rolly-scrollbar-thumb';
-    this.DOM.scrollbarThumb = scrollbarThumb;
-
-    this.state.scrollbar = {
-      clicked: false,
-      x: 0,
-      thumb: { delta: 0, height: 50 }
-    };
-
-    this.DOM.listener.appendChild(this.DOM.scrollbar);
-    this.DOM.scrollbar.appendChild(this.DOM.scrollbarThumb);
-
-    this.DOM.scrollbar.addEventListener('click', this.boundFns.calcScroll);
-    this.DOM.scrollbar.addEventListener('mousedown', this.boundFns.mouseDown);
-
-    document.addEventListener('mousemove', this.boundFns.mouseMove);
-    document.addEventListener('mouseup', this.boundFns.mouseUp);
+    this.scrollBar = new ScrollBar(this.DOM.listener, this.state, privated.setTarget.bind(this), this.options);
   },
 
 
   /**
-   * Remove the fake scroll bar.
+   * Removes the fake scroll bar.
    */
   removeFakeScrollBar: function removeFakeScrollBar() {
-    this.DOM.scrollbar.removeEventListener('click', this.boundFns.calcScroll);
-    this.DOM.scrollbar.removeEventListener('mousedown', this.boundFns.mouseDown);
-
-    document.removeEventListener('mousemove', this.boundFns.mouseMove);
-    document.removeEventListener('mouseup', this.boundFns.mouseUp);
-
-    this.DOM.listener.removeChild(this.DOM.scrollbar);
+    this.scrollBar.destroy();
   },
 
 
@@ -1149,16 +1190,17 @@ var privated = {
   */
 
   /**
-   * Get the default options for the Rolly instance.
+   * Gets the default options for the Rolly instance.
    * @return {object} The default options.
    */
-  getOptions: function getOptions() {
+  getDefaults: function getDefaults() {
     return {
       direction: 'vertical',
       native: false,
-      noScrollbar: false,
+      noScrollBar: false,
       ease: 0.075,
       preload: false,
+      ready: null,
       virtualScroll: {
         limitInertia: false,
         mouseMultiplier: 0.5,
@@ -1167,13 +1209,11 @@ var privated = {
         preventTouch: true
       },
       listener: document.body,
-      section: document.querySelector('.rolly-section') || null,
-      parallax: {
-        selector: '[data-parallax]'
-      },
+      view: utils.getElements('.rolly-view')[0] || null,
       scenes: {
         selector: '[data-scene]',
-        trigger: 'middle'
+        trigger: 'middle',
+        speed: 1
       },
       run: null
     };
@@ -1181,7 +1221,7 @@ var privated = {
 
 
   /**
-   * Get the node element on which will be attached the scroll event
+   * Gets the node element on which will be attached the scroll event
    * listener (in case of native behavior).
    * @return {object} The node element.
    */
@@ -1191,7 +1231,7 @@ var privated = {
 
 
   /**
-   * Set the target position with auto clamping.
+   * Sets the target position with auto clamping.
    */
   setTarget: function setTarget(target) {
     this.state.target = Math.round(Math.max(0, Math.min(target, this.state.bounding)));
