@@ -1,4 +1,5 @@
 module.exports = {
+  base: '/rolly/',
   dest: 'vuepress',
   head: [
     ['link', { rel: 'icon', href: `/logo.png` }],
