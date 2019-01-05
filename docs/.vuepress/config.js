@@ -1,6 +1,5 @@
 module.exports = {
   base: '/rolly/',
-  dest: 'vuepress',
   head: [
     ['link', { rel: 'icon', href: `/logo.png` }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
