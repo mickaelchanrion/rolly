@@ -1,6 +1,6 @@
 {
   "name": "rolly.js",
-  "version": "0.1.12",
+  "version": "0.2.0",
   "description": "Custom scroll behavior with inertia, smooth parallax as hell and scenes",
   "main": "dist/rolly.cjs.js",
   "module": "dist/rolly.esm.js",
