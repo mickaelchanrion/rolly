@@ -9,17 +9,8 @@ const utils = {
     return [...context.querySelectorAll(selector)];
   },
 
-  exportState(currentState) {
+  exportState(currentState, toExport) {
     const state = { ...currentState };
-    const toExport = [
-      'current',
-      'previous',
-      'target',
-      'width',
-      'height',
-      'bounding',
-      'transformPrefix',
-    ];
 
     Object.keys(state)
       .filter(key => !toExport.includes(key))

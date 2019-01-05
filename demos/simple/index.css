@@ -1,0 +1,9 @@
+[data-scene] {
+  max-width: 800px;
+  padding: 10vh 50px;
+  margin: 10vh auto;
+  font-family: sans-serif;
+  font-size: 100px;
+  text-align: center;
+  background-color: RGBA(213, 241, 238, 0.2);
+}

@@ -1,36 +1,31 @@
-const rolly = new Rolly({
+const config = {
   view: document.querySelector('.app'),
   preload: true,
   native: false,
   scenes: {
-    all: {
-      run(data) {
-        const { context } = data.sceneState.cache;
-        const { progress } = data.sceneState;
+    run(data) {
+      const { context } = data.sceneState.cache;
+      const { progress } = data.sceneState;
 
-        const readableProgress = progress < 0
-          ? '-'
-          : Math.round(progress * 100).toString() + '%';
+      const readableProgress =
+        progress < 0 ? '-' : Math.round(progress * 100).toString() + '%';
 
-        context.setAttribute('data-progress', readableProgress);
-      },
-      appear(data) {
-        console.log(`[${data.sceneState.cache.name}] appear`);
-      },
-      enter(data) {
-        console.log(`[${data.sceneState.cache.name}] enter`);
-      },
-      leave(data) {
-        console.log(`[${data.sceneState.cache.name}] leave`);
-      },
-      disappear(data) {
-        console.log(`[${data.sceneState.cache.name}] disappear`);
-      },
+      context.setAttribute('data-progress', readableProgress);
+    },
+    appear(data) {
+      console.log(`[${data.sceneState.cache.type}] appear`);
+    },
+    enter(data) {
+      console.log(`[${data.sceneState.cache.type}] enter`);
+    },
+    leave(data) {
+      console.log(`[${data.sceneState.cache.type}] leave`);
+    },
+    disappear(data) {
+      console.log(`[${data.sceneState.cache.type}] disappear`);
     },
   },
-});
-
-rolly.init();
+};
 
 const debug = {
   state: {
@@ -43,27 +38,28 @@ const debug = {
     const markers = {};
 
     [...scenes].map(scene => {
-      const name = scene.getAttribute('data-scene');
-      const trigger = scene.getAttribute('data-trigger') || rolly.options.scenes.trigger;
+      const type = scene.getAttribute('data-scene');
+      const trigger =
+        scene.getAttribute('data-trigger') || r.options.scenes.trigger;
       if (!markers[trigger]) {
         markers[trigger] = [];
       }
-      markers[trigger].push(name);
+      markers[trigger].push(type);
     });
 
     Object.entries(markers).map(marker => {
-      const names = marker[1].join(', ');
+      const types = marker[1].join(', ');
       let trigger = marker[0];
       let top = 0;
       if (trigger === 'middle') top = '50%';
-      else if (trigger === 'end')  top = '100%'
+      else if (trigger === 'end') top = '100%';
       // px from top
       else if (trigger.slice(-2) === 'px') top = `${parseFloat(trigger)}px`;
       // percentage
       else if (trigger.slice(-1) === '%') {
         top = trigger;
       }
-      triggers.innerHTML += `<div class="trigger" data-scene="${names}" style="top: ${top};"></div>`;
+      triggers.innerHTML += `<div class="trigger" data-scene="${types}" style="top: ${top};"></div>`;
     });
 
     const toggler = document.getElementById('debugToggler');
@@ -81,7 +77,10 @@ const debug = {
     });
     const triggers = document.querySelector('.triggers');
     triggers.style.display = this.state.debug ? 'block' : 'none';
-  }
-}
+  },
+};
 
+const r = rolly(config);
+
+r.init();
 debug.init();

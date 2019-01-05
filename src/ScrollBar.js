@@ -5,9 +5,9 @@ export default class ScrollBar {
    * The constructor.
    * @constructor
    * @param {object} parent - The parent DOM of the scroll bar.
-   * @param {object} globalState - The state of the Rolly instance.
+   * @param {object} globalState - The state of the rolly instance.
    * @param {function} setTarget - The {@link Rolly#setTarget} method.
-   * @param {object} options - Options of Rolly.
+   * @param {object} options - Options of rolly.
    */
   constructor(parent, globalState, setTarget, options) {
     this.options = options;
@@ -26,7 +26,7 @@ export default class ScrollBar {
 
   /**
    * Sets cache for scroll bar.
-   * @param {object} globalState - The state of the Rolly instance.
+   * @param {object} globalState - The state of the rolly instance.
    */
   cache(globalState) {
     this.state.cache = {
@@ -40,7 +40,7 @@ export default class ScrollBar {
 
   /**
    * Animation frame callback (called at every frames).
-   * @param {object} globalState - The state of the Rolly instance.
+   * @param {object} globalState - The state of the rolly instance.
    */
   run({ current, transformPrefix }) {
     const { bounding, viewSize } = this.state.cache;
@@ -128,7 +128,7 @@ export default class ScrollBar {
     if (event.which === 1) {
       this.state.clicked = true;
     }
-    this.DOM.parent.classList.add('is-dragging');
+    this.DOM.parent.classList.add('is-dragging-scroll-bar');
   }
 
   /**

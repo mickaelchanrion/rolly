@@ -1,4 +1,4 @@
-const rolly = new Rolly({
+const config = {
   view: document.querySelector('.app'),
   preload: true,
   native: false,
@@ -39,6 +39,7 @@ const rolly = new Rolly({
       },
     },
   },
-});
+};
 
-rolly.init();
+const r = rolly(config);
+r.init();

@@ -1,6 +1,6 @@
 {
-  "name": "Rolly.js",
-  "short_name": "Rolly",
+  "name": "rolly.js",
+  "short_name": "rolly",
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",

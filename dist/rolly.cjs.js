@@ -49,6 +49,18 @@ var _extends = Object.assign || function (target) {
   return target;
 };
 
+var objectWithoutProperties = function (obj, keys) {
+  var target = {};
+
+  for (var i in obj) {
+    if (keys.indexOf(i) >= 0) continue;
+    if (!Object.prototype.hasOwnProperty.call(obj, i)) continue;
+    target[i] = obj[i];
+  }
+
+  return target;
+};
+
 var toConsumableArray = function (arr) {
   if (Array.isArray(arr)) {
     for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
@@ -68,9 +80,8 @@ var utils = {
 
     return [].concat(toConsumableArray(context.querySelectorAll(selector)));
   },
-  exportState: function exportState(currentState) {
+  exportState: function exportState(currentState, toExport) {
     var state = _extends({}, currentState);
-    var toExport = ['current', 'previous', 'target', 'width', 'height', 'bounding', 'transformPrefix'];
 
     Object.keys(state).filter(function (key) {
       return !toExport.includes(key);
@@ -87,7 +98,7 @@ var Scene = function () {
    * The constructor.
    * @constructor
    * @param {object} context - The DOM context.
-   * @param {object} options - Options of Rolly.
+   * @param {object} options - Options of rolly.
    */
   function Scene(context, options) {
     classCallCheck(this, Scene);
@@ -100,8 +111,7 @@ var Scene = function () {
       inView: false,
       active: false,
       progress: 0,
-      progressInView: 0,
-      transform: 0
+      progressInView: 0
     };
 
     this.DOM = { context: context };
@@ -110,29 +120,24 @@ var Scene = function () {
   /**
    * A promise to get cache for the scene.
    * The default cache object is as follow:
-   *   - context: the DOM element.
-   *   - name: the name of the scene.
-   *   - top: distance between the top of the view element and the top of
-   *     the element.
-   *   - bottom: distance between the top of the view element and the bottom
-   *     of the element.
-   *   - left: distance between the left of the view element and the left of
-   *     the element.
-   *   - right: distance between the left of the view element and the right
-   *     of the element.
-   *   - size: height of the element (or width on horizontal mode).
+   *   - context: the DOM element of the scene.
+   *   - type: the type of the scene.
+   *   - top: distance between the top of the view and the top of the scene at the initial state.
+   *   - bottom: distance between the top of the view and the bottom of the scene at the initial state.
+   *   - left: distance between the left of the view and the left of the scene at the initial state.
+   *   - right: distance between the left of the view and the right of the scene at the initial state.
+   *   - size: height of the scene (or width on horizontal mode).
    *   - speed: the speed of the scene.
-   *   - trigger: the trigger position (e.g: 'middle', 'bottom', '100px', '10%').
+   *   - trigger: the trigger position (e.g.: 'middle', 'bottom', '100px', '10%').
    *
-   * The cache of the scene is extendable by providing a method at:
-   * `options.scenes.${sceneName}.cache`.
-   * This method provides an object that contains:
+   * The cache of the scene is extendable by providing a method in options: `options.scenes.${sceneType}.cache`.
+   * This method gives an object that contains:
    *   - cache: the computed cache so far.
    *   - state: the state of the scene.
-   *   - globalState: the state of the Rolly instance
+   *   - globalState: the state of the rolly instance
    * Simply return new properties in an object to extend the cache.
    *
-   * @param {object} globalState - The state of the Rolly instance.
+   * @param {object} globalState - The state of the rolly instance.
    */
 
 
@@ -149,15 +154,17 @@ var Scene = function () {
         // const scrollOffset = globalState.target;
         var scrollOffset = 0;
 
+        var viewSize = vertical ? globalState.height : globalState.width;
+
         var context = _this.DOM.context;
 
         context.style.display = null;
-        var computedDisplay = window.getComputedStyle(context).display;
-        if (computedDisplay === 'none') {
+        var computedStyle = window.getComputedStyle(context);
+        if (computedStyle.display === 'none') {
           return _this.state.cache = null;
         }
 
-        if (computedDisplay === 'inline') {
+        if (computedStyle.display === 'inline') {
           context.style.display = 'block';
         }
 
@@ -165,24 +172,44 @@ var Scene = function () {
 
         var bounding = context.getBoundingClientRect();
 
+        var type = context.getAttribute('data-scene');
+
+        var options = _this.options.scenes;
+        var sceneOptions = options[type] || {};
+
         var cache = {
           context: context,
-          name: context.getAttribute('data-scene'),
+          type: type,
           top: vertical ? bounding.top + scrollOffset : bounding.top,
           bottom: vertical ? bounding.bottom + scrollOffset : bounding.bottom,
           left: vertical ? bounding.left : bounding.left + scrollOffset,
           right: vertical ? bounding.right : bounding.right + scrollOffset,
           size: vertical ? bounding.height : bounding.width,
-          speed: context.getAttribute('data-speed') || _this.options.scenes.speed,
-          trigger: context.getAttribute('data-trigger') || _this.options.scenes.trigger
+          speed: parseFloat(context.getAttribute('data-speed')) || sceneOptions.speed || options.speed,
+          trigger: context.getAttribute('data-trigger') || sceneOptions.trigger || options.trigger
         };
+
+        var _cache = cache,
+            trigger = _cache.trigger;
+
+
+        var triggerOffset = 0;
+        if (trigger === 'middle') triggerOffset = viewSize / 2;else if (trigger === 'end') triggerOffset = viewSize;
+        // px from top
+        else if (trigger.slice(-2) === 'px') triggerOffset = parseFloat(trigger);
+          // percentage
+          else if (trigger.slice(-1) === '%') {
+              triggerOffset = viewSize * parseFloat(trigger) / 100;
+            }
+
+        cache.triggerOffset = triggerOffset;
 
         var start = vertical ? cache.top + cache.size / 2 - globalState.height / 2 : cache.left + cache.size / 2 - globalState.width / 2;
         cache.offset = start - start * cache.speed;
 
         // Cache for custom scenes
-        if (_this.options.scenes[cache.name]) {
-          var getCache = _this.options.scenes[cache.name].cache;
+        var getCache = sceneOptions.cache || options.cache;
+        if (getCache) {
           if (getCache) {
             var extendedCache = getCache.call(_this, {
               cache: cache,
@@ -202,7 +229,7 @@ var Scene = function () {
 
     /**
      * Animation frame callback (called at every frames).
-     * @param {object} globalState - The state of the Rolly instance.
+     * @param {object} globalState - The state of the rolly instance.
      */
 
   }, {
@@ -220,68 +247,67 @@ var Scene = function () {
           transform = _calc.transform,
           start = _calc.start;
 
-      this.state.progress = this.getProgress(transform, viewSize);
+      this.state.progress = this.getProgress(transform);
       this.state.progressInView = this.getProgressInView(start, viewSize);
 
-      var sceneOptions = this.options.scenes[cache.name] || {};
-      var allScenesOptions = this.options.scenes['all'] || {};
+      var _options$scenes = this.options.scenes,
+          sceneOptions = _options$scenes[cache.type],
+          options = objectWithoutProperties(_options$scenes, [cache.type]);
+
+
+      if (!sceneOptions) {
+        sceneOptions = {};
+      }
 
       // The data we send to every custom functions
       var data = { globalState: globalState, sceneState: this.state, transform: transform };
 
       // Check if inView value changed
       if (this.state.inView !== inView) {
-
         // Trigger appear/disappear callbacks
         var action = inView ? 'appear' : 'disappear';
-        allScenesOptions[action] && allScenesOptions[action].call(this, data);
-        sceneOptions[action] && sceneOptions[action].call(this, data);
+        if (sceneOptions[action]) sceneOptions[action].call(this, data);else if (options[action]) options[action].call(this, data);
 
         this.state.inView = inView;
       }
 
-      // Check and then trigger enter/leave callbacks
+      // Check and then trigger callbacks
       if (inView) {
+        this.DOM.context.style.willChange = 'transform';
+        this.DOM.context.style.visibility = null;
+
         // Run
-        allScenesOptions.run && allScenesOptions.run.call(this, data);
-        sceneOptions.run && sceneOptions.run.call(this, data);
+        if (sceneOptions.run) sceneOptions.run.call(this, data);else if (options.run) options.run.call(this, data);
 
         // Enter
         if (this.checkEnter(active, this.state.progress)) {
           this.state.active = true;
-          allScenesOptions.enter && allScenesOptions.enter.call(this, data);
-          sceneOptions.enter && sceneOptions.enter.call(this, data);
+          if (sceneOptions.enter) sceneOptions.enter.call(this, data);else if (options.enter) options.enter.call(this, data);
         }
 
         // Leave
         else if (this.checkLeave(active, this.state.progress)) {
             this.state.active = false;
-            allScenesOptions.leave && allScenesOptions.leave.call(this, data);
-            sceneOptions.leave && sceneOptions.leave.call(this, data);
+            if (sceneOptions.leave) sceneOptions.leave.call(this, data);else if (options.leave) options.leave.call(this, data);
           }
 
         // Transform
-        if (allScenesOptions.transform || sceneOptions.transform) {
-          allScenesOptions.transform && allScenesOptions.transform.call(this, data);
-          sceneOptions.transform && sceneOptions.transform.call(this, data);
-        } else {
+        if (sceneOptions.transform) sceneOptions.transform.call(this, data);else if (options.transform) options.transform.call(this, data);else {
           this.DOM.context.style[globalState.transformPrefix] = utils.getCSSTransform(transform, this.options.direction);
         }
-        this.DOM.context.style.visibility = null;
       } else {
         this.DOM.context.style.visibility = 'hidden';
+        this.DOM.context.style.willChange = null;
       }
     }
 
     /**
      * Computes useful values for the scene.
-     * @param {object} globalState - The state of the Rolly instance
+     * @param {object} globalState - The state of the rolly instance
      * @return {object} Values as follow:
      * - transform: the transform value according to the speed
-     * - start: distance between the start position of the view and the start
-     * position of the scene context (top|left)
-     * - end: distance between the end position of the view and the end position
-     * of the scene context (bottom|right)
+     * - start: distance between the start position of the view and the start position of the scene context (top|left)
+     * - end: distance between the end position of the view and the end position of the scene context (bottom|right)
      * - inView: whether the scene is in the viewport
      */
 
@@ -311,30 +337,20 @@ var Scene = function () {
     }
 
     /**
-     * Gets the progress position of the scene in relation to the trigger
-     * (default trigger position is 'middle').
+     * Gets the progress of the scene in relation to its trigger (default trigger position is 'middle').
      * @param {number} transform - The transform position of the scene.
-     * @param {number} viewSize - The size of the view.
      * @return {number} The progress position.
      */
 
   }, {
     key: 'getProgress',
-    value: function getProgress(transform, viewSize) {
+    value: function getProgress(transform) {
       var vertical = this.options.direction === 'vertical';
       var cache = this.state.cache;
-      var trigger = cache.trigger;
+      var triggerOffset = cache.triggerOffset;
 
 
-      var position = -transform;
-
-      if (trigger === 'middle') position += viewSize / 2;else if (trigger === 'end') position += viewSize;
-      // px from top
-      else if (trigger.slice(-2) === 'px') position += parseFloat(trigger);
-        // percentage
-        else if (trigger.slice(-1) === '%') {
-            position += viewSize * parseFloat(trigger) / 100;
-          }
+      var position = -transform + triggerOffset;
 
       var progress = (position - (vertical ? cache.top : cache.left)) / cache.size;
 
@@ -343,7 +359,7 @@ var Scene = function () {
     }
 
     /**
-     * Gets the progress position of the scene in relation to the viewport.
+     * Gets the progress of the scene in relation to the viewport.
      * @param {number} start - The distance between the start position of the view and the start.
      * @param {*} viewSize - The size of the view.
      */
@@ -357,8 +373,7 @@ var Scene = function () {
     /**
      * Checks if the trigger met the scene.
      * @param {boolean} active - Whether the scene is active.
-     * @param {number} progress - The progress position of the scene related
-     * to the trigger
+     * @param {number} progress - The progress position of the scene related to the trigger
      * @return {boolean} The result.
      */
 
@@ -371,8 +386,7 @@ var Scene = function () {
     /**
      * Checks if the trigger left the scene.
      * @param {boolean} active - Whether the scene is active.
-     * @param {number} progress - The progress position of the scene related
-     * to the trigger
+     * @param {number} progress - The progress position of the scene related to the trigger
      * @return {boolean} The result.
      */
 
@@ -390,9 +404,9 @@ var ScrollBar = function () {
    * The constructor.
    * @constructor
    * @param {object} parent - The parent DOM of the scroll bar.
-   * @param {object} globalState - The state of the Rolly instance.
+   * @param {object} globalState - The state of the rolly instance.
    * @param {function} setTarget - The {@link Rolly#setTarget} method.
-   * @param {object} options - Options of Rolly.
+   * @param {object} options - Options of rolly.
    */
   function ScrollBar(parent, globalState, setTarget, options) {
     classCallCheck(this, ScrollBar);
@@ -413,7 +427,7 @@ var ScrollBar = function () {
 
   /**
    * Sets cache for scroll bar.
-   * @param {object} globalState - The state of the Rolly instance.
+   * @param {object} globalState - The state of the rolly instance.
    */
 
 
@@ -429,7 +443,7 @@ var ScrollBar = function () {
 
     /**
      * Animation frame callback (called at every frames).
-     * @param {object} globalState - The state of the Rolly instance.
+     * @param {object} globalState - The state of the rolly instance.
      */
 
   }, {
@@ -540,7 +554,7 @@ var ScrollBar = function () {
       if (event.which === 1) {
         this.state.clicked = true;
       }
-      this.DOM.parent.classList.add('is-dragging');
+      this.DOM.parent.classList.add('is-dragging-scroll-bar');
     }
 
     /**
@@ -628,19 +642,15 @@ var ScrollBar = function () {
   return ScrollBar;
 }();
 
-// Bad perfs in firefox?
-// Take a look at this ;)
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1427177
-
 var Rolly = function () {
   /*
-  ** Public methods
-  */
+   ** Public methods
+   */
 
   /**
    * The constructor.
    * @constructor
-   * @param {object} options - Options of Rolly.
+   * @param {object} options - Options of rolly.
    */
   function Rolly() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -660,7 +670,7 @@ var Rolly = function () {
   }
 
   /**
-   * Initializes the Rolly instance.
+   * Initializes the rolly instance.
    * - adds DOM classes.
    * - if native, adds fake height.
    * - else if `options.noScrollBar` is false, adds a fake scroll bar.
@@ -685,22 +695,22 @@ var Rolly = function () {
       this.DOM.listener.classList.add(direction + '-scroll');
       this.DOM.view.classList.add('rolly-view');
 
+      this.options.native ? privated.addFakeScrollHeight.call(this) : !this.options.noScrollBar && privated.addFakeScrollBar.call(this);
+
       if (this.options.preload) privated.preloadImages.call(this, function () {
-        _this.state.preloaded = true;
+        _this.state.preLoaded = true;
         _this.boundFns.resize();
         privated.ready.call(_this);
       });
-
-      this.options.native ? privated.addFakeScrollHeight.call(this) : !this.options.noScrollBar && privated.addFakeScrollBar.call(this);
 
       this.on();
     }
 
     /**
-     * Enables the Rolly instance.
+     * Enables the rolly instance.
      * - starts listening events (scroll and resize),
      * - requests an animation frame if {@param rAF} is true.
-     * @param {boolean} rAF - whether request an animation frame.
+     * @param {boolean} rAF - whether to request an animation frame.
      */
 
   }, {
@@ -729,10 +739,10 @@ var Rolly = function () {
     }
 
     /**
-     * Disables the Rolly instance.
+     * Disables the rolly instance.
      * - stops listening events (scroll and resize),
      * - cancels any requested animation frame if {@param cAF} is true.
-     * @param {boolean} cAF - whether cancel a requested animation frame.
+     * @param {boolean} cAF - whether to cancel a requested animation frame.
      */
 
   }, {
@@ -758,10 +768,10 @@ var Rolly = function () {
     }
 
     /**
-     * Destroys the Rolly instance.
+     * Destroys the rolly instance.
      * - removes DOM classes.
-     * - if native, removes fake height.
-     * - else if `options.noScrollBar` is false, removes a fake scroll bar.
+     * - if native, removes the fake height for scroll.
+     * - else if `options.noScrollBar` is false, removes the fake scroll bar.
      * - calls {@link Rolly#off}.
      */
 
@@ -783,8 +793,8 @@ var Rolly = function () {
     }
 
     /**
-     * Reloads the Rolly instance with new options.
-     * @param {object} options - Options of Rolly.
+     * Reloads the rolly instance with new options.
+     * @param {object} options - Options of rolly.
      */
 
   }, {
@@ -799,10 +809,12 @@ var Rolly = function () {
       // Extend default options
       this.options = privated.extendOptions.call(this, options);
 
-      this.DOM = {
+      var DOM = this.DOM;
+
+      this.DOM = _extends({}, DOM, {
         listener: this.options.listener,
         view: this.options.view
-      };
+      });
 
       privated.initScenes.call(this);
 
@@ -811,7 +823,7 @@ var Rolly = function () {
 
     /**
      * Scrolls to a target (number|DOM element).
-     * @param {number|object} target - The target to scroll.
+     * @param {number|object} target - The target to scroll to.
      * @param {object} options - Options.
      */
 
@@ -869,7 +881,7 @@ var Rolly = function () {
     }
 
     /**
-     * Updates the states and re-setup all the cache of the Rolly instance.
+     * Updates the states and re-setup all the cache of the rolly instance.
      * Useful if the width/height of the view changed.
      * - calls {@link Rolly#resize}.
      */
@@ -884,13 +896,13 @@ var Rolly = function () {
 }();
 
 /*
-** Private methods
-*/
+ ** Private methods
+ */
 
 
 var privated = {
   /**
-   * Gets all functions that needs to be bound with the Rolly's scope
+   * Gets all functions that needs to be bound with the rolly's scope
    */
   getBoundFns: function getBoundFns() {
     var _this2 = this;
@@ -904,7 +916,7 @@ var privated = {
 
 
   /**
-   * Initializes the state of the Rolly instance.
+   * Initializes the state of the rolly instance.
    */
   initState: function initState() {
     this.state = {
@@ -916,16 +928,16 @@ var privated = {
       height: window.innerHeight,
       bounding: 0,
       ready: false,
-      preloaded: false,
+      preLoaded: false,
 
       // Animation frame
       rAF: undefined,
       /*
-      * It seems that under heavy load, Firefox will still call the RAF
-      * callback even though the RAF has been canceled. To prevent
-      * that we set a flag to prevent any callback to be executed when
-      * RAF is removed.
-      */
+       * It seems that under heavy load, Firefox will still call the RAF
+       * callback even though the RAF has been canceled. To prevent
+       * that we set a flag to prevent any callback to be executed when
+       * RAF is removed.
+       */
       isRAFCanceled: false,
 
       // Native scroll
@@ -955,8 +967,8 @@ var privated = {
 
 
   /*
-  ** Animation frame methods
-  */
+   ** Animation frame methods
+   */
 
   /**
    * Animation frame callback (called at every frames).
@@ -978,7 +990,7 @@ var privated = {
       this.state.current += delta;
     }
 
-    var exportedState = utils.exportState(this.state);
+    var exportedState = utils.exportState(this.state, ['current', 'previous', 'target', 'width', 'height', 'bounding', 'ready', 'preLoaded', 'transformPrefix']);
 
     if (Math.abs(diff) < 10 && this.state.scrollTo.callback) {
       this.state.scrollTo.callback(exportedState);
@@ -1022,14 +1034,14 @@ var privated = {
 
 
   /*
-  ** Events
-  */
+   ** Events
+   */
 
   /**
-   * Checks if Rolly is ready.
+   * Checks if rolly is ready.
    */
   ready: function ready() {
-    if (this.state.ready && (this.options.preload ? this.state.preloaded : true)) {
+    if (this.state.ready && (this.options.preload ? this.state.preLoaded : true)) {
       if (this.options.ready) {
         this.options.ready(this.state);
       }
@@ -1097,6 +1109,7 @@ var privated = {
     if (this.scrollBar) {
       this.scrollBar.cache(this.state);
     } else if (this.options.native) {
+      console.log(this.DOM);
       this.DOM.scroll.style[prop] = this.state.bounding + 'px';
     }
 
@@ -1110,8 +1123,8 @@ var privated = {
 
 
   /*
-  ** Utils
-  */
+   ** Utils
+   */
 
   /**
    * Extends options.
@@ -1128,10 +1141,8 @@ var privated = {
 
 
   /**
-   * Preload images in the view of the Rolly instance.
-   * Useful if the view contains images that might not have fully loaded
-   * when the instance is created (because when an image is loaded, the
-   * total height changes).
+   * Preload images in the view of the rolly instance.
+   * Useful if the view contains images that might not have fully loaded when the instance is created (because when an image is loaded, the total height changes).
    * @param {function} callback - The function to run when images are loaded.
    */
   preloadImages: function preloadImages(callback) {
@@ -1160,6 +1171,7 @@ var privated = {
   addFakeScrollHeight: function addFakeScrollHeight() {
     var scroll = document.createElement('div');
     scroll.className = 'rolly-scroll-view';
+    console.log('add fake scroll height');
     this.DOM.scroll = scroll;
     this.DOM.listener.appendChild(this.DOM.scroll);
   },
@@ -1190,21 +1202,23 @@ var privated = {
 
 
   /*
-  ** Getters and setters
-  */
+   ** Getters and setters
+   */
 
   /**
-   * Gets the default options for the Rolly instance.
+   * Gets the default options for the rolly instance.
    * @return {object} The default options.
    */
   getDefaults: function getDefaults() {
     return {
       direction: 'vertical',
+      listener: document.body,
+      view: utils.getElements('.rolly-view')[0] || null,
       native: false,
-      noScrollBar: false,
-      ease: 0.075,
-      preload: false,
+      preload: true,
       ready: null,
+      run: null,
+      ease: 0.075,
       virtualScroll: {
         limitInertia: false,
         mouseMultiplier: 0.5,
@@ -1212,21 +1226,18 @@ var privated = {
         firefoxMultiplier: 30,
         preventTouch: true
       },
-      listener: document.body,
-      view: utils.getElements('.rolly-view')[0] || null,
+      noScrollBar: false,
       scenes: {
         selector: '[data-scene]',
-        trigger: 'middle',
-        speed: 1
-      },
-      run: null
+        speed: 1,
+        trigger: 'middle'
+      }
     };
   },
 
 
   /**
-   * Gets the node element on which will be attached the scroll event
-   * listener (in case of native behavior).
+   * Gets the node element on which will be attached the scroll event listener (in case of native behavior).
    * @return {object} The node element.
    */
   getNodeListener: function getNodeListener() {

@@ -5,18 +5,15 @@ import utils from './utils';
 import Scene from './Scene';
 import ScrollBar from './ScrollBar';
 
-// Bad perfs in firefox?
-// Take a look at this ;)
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1427177
 class Rolly {
   /*
-  ** Public methods
-  */
+   ** Public methods
+   */
 
   /**
    * The constructor.
    * @constructor
-   * @param {object} options - Options of Rolly.
+   * @param {object} options - Options of rolly.
    */
   constructor(options = {}) {
     this.boundFns = privated.getBoundFns.call(this);
@@ -33,7 +30,7 @@ class Rolly {
   }
 
   /**
-   * Initializes the Rolly instance.
+   * Initializes the rolly instance.
    * - adds DOM classes.
    * - if native, adds fake height.
    * - else if `options.noScrollBar` is false, adds a fake scroll bar.
@@ -54,24 +51,25 @@ class Rolly {
     this.DOM.listener.classList.add(`${direction}-scroll`);
     this.DOM.view.classList.add('rolly-view');
 
-    if (this.options.preload) privated.preloadImages.call(this, () => {
-      this.state.preloaded = true;
-      this.boundFns.resize();
-      privated.ready.call(this);
-    });
-
     this.options.native
       ? privated.addFakeScrollHeight.call(this)
       : !this.options.noScrollBar && privated.addFakeScrollBar.call(this);
+
+    if (this.options.preload)
+      privated.preloadImages.call(this, () => {
+        this.state.preLoaded = true;
+        this.boundFns.resize();
+        privated.ready.call(this);
+      });
 
     this.on();
   }
 
   /**
-   * Enables the Rolly instance.
+   * Enables the rolly instance.
    * - starts listening events (scroll and resize),
    * - requests an animation frame if {@param rAF} is true.
-   * @param {boolean} rAF - whether request an animation frame.
+   * @param {boolean} rAF - whether to request an animation frame.
    */
   on(rAF = true) {
     if (this.options.native) {
@@ -95,10 +93,10 @@ class Rolly {
   }
 
   /**
-   * Disables the Rolly instance.
+   * Disables the rolly instance.
    * - stops listening events (scroll and resize),
    * - cancels any requested animation frame if {@param cAF} is true.
-   * @param {boolean} cAF - whether cancel a requested animation frame.
+   * @param {boolean} cAF - whether to cancel a requested animation frame.
    */
   off(cAF = true) {
     if (this.options.native) {
@@ -119,10 +117,10 @@ class Rolly {
   }
 
   /**
-   * Destroys the Rolly instance.
+   * Destroys the rolly instance.
    * - removes DOM classes.
-   * - if native, removes fake height.
-   * - else if `options.noScrollBar` is false, removes a fake scroll bar.
+   * - if native, removes the fake height for scroll.
+   * - else if `options.noScrollBar` is false, removes the fake scroll bar.
    * - calls {@link Rolly#off}.
    */
   destroy() {
@@ -134,7 +132,7 @@ class Rolly {
     this.DOM.view.classList.remove('rolly-view');
 
     this.virtualScroll &&
-    (this.virtualScroll.destroy(), (this.virtualScroll = null));
+      (this.virtualScroll.destroy(), (this.virtualScroll = null));
 
     this.off();
 
@@ -144,8 +142,8 @@ class Rolly {
   }
 
   /**
-   * Reloads the Rolly instance with new options.
-   * @param {object} options - Options of Rolly.
+   * Reloads the rolly instance with new options.
+   * @param {object} options - Options of rolly.
    */
   reload(options = this.options) {
     this.destroy();
@@ -155,9 +153,11 @@ class Rolly {
     // Extend default options
     this.options = privated.extendOptions.call(this, options);
 
+    const { DOM } = this;
     this.DOM = {
+      ...DOM,
       listener: this.options.listener,
-      view: this.options.view
+      view: this.options.view,
     };
 
     privated.initScenes.call(this);
@@ -167,16 +167,16 @@ class Rolly {
 
   /**
    * Scrolls to a target (number|DOM element).
-   * @param {number|object} target - The target to scroll.
+   * @param {number|object} target - The target to scroll to.
    * @param {object} options - Options.
    */
   scrollTo(target, options) {
     const defaultOptions = {
       offset: 0,
       position: 'start',
-      callback: null
+      callback: null,
     };
-    options = { ...defaultOptions, ...options }
+    options = { ...defaultOptions, ...options };
 
     const vertical = this.options.direction === 'vertical';
     const scrollOffset = this.state.current;
@@ -224,7 +224,7 @@ class Rolly {
   }
 
   /**
-   * Updates the states and re-setup all the cache of the Rolly instance.
+   * Updates the states and re-setup all the cache of the rolly instance.
    * Useful if the width/height of the view changed.
    * - calls {@link Rolly#resize}.
    */
@@ -234,24 +234,22 @@ class Rolly {
 }
 
 /*
-** Private methods
-*/
+ ** Private methods
+ */
 const privated = {
   /**
-   * Gets all functions that needs to be bound with the Rolly's scope
+   * Gets all functions that needs to be bound with the rolly's scope
    */
   getBoundFns() {
     const fns = {};
-    [
-      'resize',
-      'debounceScroll',
-      'virtualScroll',
-    ].map(fn => (fns[fn] = privated[fn].bind(this)));
+    ['resize', 'debounceScroll', 'virtualScroll'].map(
+      fn => (fns[fn] = privated[fn].bind(this))
+    );
     return fns;
   },
 
   /**
-   * Initializes the state of the Rolly instance.
+   * Initializes the state of the rolly instance.
    */
   initState() {
     this.state = {
@@ -263,16 +261,16 @@ const privated = {
       height: window.innerHeight,
       bounding: 0,
       ready: false,
-      preloaded: false,
+      preLoaded: false,
 
       // Animation frame
       rAF: undefined,
       /*
-      * It seems that under heavy load, Firefox will still call the RAF
-      * callback even though the RAF has been canceled. To prevent
-      * that we set a flag to prevent any callback to be executed when
-      * RAF is removed.
-      */
+       * It seems that under heavy load, Firefox will still call the RAF
+       * callback even though the RAF has been canceled. To prevent
+       * that we set a flag to prevent any callback to be executed when
+       * RAF is removed.
+       */
       isRAFCanceled: false,
 
       // Native scroll
@@ -292,13 +290,14 @@ const privated = {
   initScenes() {
     this.scenes = [];
 
-    utils.getElements(this.options.scenes.selector, this.DOM.view)
+    utils
+      .getElements(this.options.scenes.selector, this.DOM.view)
       .forEach(scene => this.scenes.push(new Scene(scene, this.options)));
   },
 
   /*
-  ** Animation frame methods
-  */
+   ** Animation frame methods
+   */
 
   /**
    * Animation frame callback (called at every frames).
@@ -320,7 +319,17 @@ const privated = {
       this.state.current += delta;
     }
 
-    const exportedState = utils.exportState(this.state);
+    const exportedState = utils.exportState(this.state, [
+      'current',
+      'previous',
+      'target',
+      'width',
+      'height',
+      'bounding',
+      'ready',
+      'preLoaded',
+      'transformPrefix',
+    ]);
 
     if (Math.abs(diff) < 10 && this.state.scrollTo.callback) {
       this.state.scrollTo.callback(exportedState);
@@ -359,14 +368,17 @@ const privated = {
   },
 
   /*
-  ** Events
-  */
+   ** Events
+   */
 
   /**
-   * Checks if Rolly is ready.
+   * Checks if rolly is ready.
    */
   ready() {
-    if (this.state.ready && (this.options.preload ? this.state.preloaded : true)) {
+    if (
+      this.state.ready &&
+      (this.options.preload ? this.state.preLoaded : true)
+    ) {
       if (this.options.ready) {
         this.options.ready(this.state);
       }
@@ -399,8 +411,8 @@ const privated = {
           ? window.scrollY || window.pageYOffset
           : this.DOM.listener.scrollTop
         : isWindow
-          ? window.scrollX || window.pageXOffset
-          : this.DOM.listener.scrollLeft;
+        ? window.scrollX || window.pageXOffset
+        : this.DOM.listener.scrollLeft;
 
     privated.setTarget.call(this, target);
 
@@ -437,6 +449,7 @@ const privated = {
     if (this.scrollBar) {
       this.scrollBar.cache(this.state);
     } else if (this.options.native) {
+      console.log(this.DOM);
       this.DOM.scroll.style[prop] = `${this.state.bounding}px`;
     }
 
@@ -447,8 +460,8 @@ const privated = {
   },
 
   /*
-  ** Utils
-  */
+   ** Utils
+   */
 
   /**
    * Extends options.
@@ -464,10 +477,8 @@ const privated = {
   },
 
   /**
-   * Preload images in the view of the Rolly instance.
-   * Useful if the view contains images that might not have fully loaded
-   * when the instance is created (because when an image is loaded, the
-   * total height changes).
+   * Preload images in the view of the rolly instance.
+   * Useful if the view contains images that might not have fully loaded when the instance is created (because when an image is loaded, the total height changes).
    * @param {function} callback - The function to run when images are loaded.
    */
   preloadImages(callback) {
@@ -495,6 +506,7 @@ const privated = {
   addFakeScrollHeight() {
     const scroll = document.createElement('div');
     scroll.className = 'rolly-scroll-view';
+    console.log('add fake scroll height')
     this.DOM.scroll = scroll;
     this.DOM.listener.appendChild(this.DOM.scroll);
   },
@@ -526,21 +538,23 @@ const privated = {
   },
 
   /*
-  ** Getters and setters
-  */
+   ** Getters and setters
+   */
 
   /**
-   * Gets the default options for the Rolly instance.
+   * Gets the default options for the rolly instance.
    * @return {object} The default options.
    */
   getDefaults() {
     return {
       direction: 'vertical',
+      listener: document.body,
+      view: utils.getElements('.rolly-view')[0] || null,
       native: false,
-      noScrollBar: false,
-      ease: 0.075,
-      preload: false,
+      preload: true,
       ready: null,
+      run: null,
+      ease: 0.075,
       virtualScroll: {
         limitInertia: false,
         mouseMultiplier: 0.5,
@@ -548,26 +562,21 @@ const privated = {
         firefoxMultiplier: 30,
         preventTouch: true,
       },
-      listener: document.body,
-      view: utils.getElements('.rolly-view')[0] || null,
+      noScrollBar: false,
       scenes: {
         selector: '[data-scene]',
-        trigger: 'middle',
         speed: 1,
+        trigger: 'middle',
       },
-      run: null,
     };
   },
 
   /**
-   * Gets the node element on which will be attached the scroll event
-   * listener (in case of native behavior).
+   * Gets the node element on which will be attached the scroll event listener (in case of native behavior).
    * @return {object} The node element.
    */
   getNodeListener() {
-    return this.DOM.listener === document.body
-      ? window
-      : this.DOM.listener;
+    return this.DOM.listener === document.body ? window : this.DOM.listener;
   },
 
   /**
@@ -578,9 +587,9 @@ const privated = {
       Math.max(0, Math.min(target, this.state.bounding))
     );
     !this.state.rAF && privated.rAF.call(this);
-  }
+  },
 };
 
-const rolly = (options) => new Rolly(options);
+const rolly = options => new Rolly(options);
 
 export default rolly;

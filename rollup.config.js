@@ -8,7 +8,7 @@ export default [
   {
     input: 'src/main.js',
     output: {
-      name: 'Rolly',
+      name: 'rolly',
       file: pkg.browser,
       format: 'umd'
     },
