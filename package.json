@@ -17,7 +17,8 @@
     "rollup": "^0.68.1",
     "rollup-plugin-babel": "^4.1.0",
     "rollup-plugin-commonjs": "^9.1.0",
-    "rollup-plugin-node-resolve": "^4.0.0"
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "vuepress": "^0.14.8"
   },
   "scripts": {
     "build": "rollup -c",
