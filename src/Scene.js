@@ -28,7 +28,8 @@ export default class Scene {
    *   - context: the DOM element of the scene.
    *   - type: the type of the scene.
    *   - top: distance between the top of the view and the top of the scene at the initial state.
-   *   - bottom: distance between the top of the view and the bottom of the scene at the initial state.
+   *   - bottom: distance between the top of the view and the bottom of the scene at the initial
+   * state.
    *   - left: distance between the left of the view and the left of the scene at the initial state.
    *   - right: distance between the left of the view and the right of the scene at the initial state.
    *   - size: height of the scene (or width on horizontal mode).
@@ -59,7 +60,8 @@ export default class Scene {
       context.style.display = null;
       const computedStyle = window.getComputedStyle(context);
       if (computedStyle.display === 'none') {
-        return (this.state.cache = null);
+        this.state.cache = null;
+        resolve(this.state.cache);
       }
 
       if (computedStyle.display === 'inline') {
@@ -84,13 +86,13 @@ export default class Scene {
         right: vertical ? bounding.right : bounding.right + scrollOffset,
         size: vertical ? bounding.height : bounding.width,
         speed:
-          parseFloat(context.getAttribute('data-speed')) ||
-          sceneOptions.speed ||
-          options.speed,
+          parseFloat(context.getAttribute('data-speed'))
+          || sceneOptions.speed
+          || options.speed,
         trigger:
-          context.getAttribute('data-trigger') ||
-          sceneOptions.trigger ||
-          options.trigger,
+          context.getAttribute('data-trigger')
+          || sceneOptions.trigger
+          || options.trigger,
       };
 
       const { trigger } = cache;
@@ -128,7 +130,7 @@ export default class Scene {
 
       this.state.cache = cache;
       this.state.caching = false;
-      resolve();
+      resolve(this.state.cache);
     });
   }
 
@@ -136,20 +138,19 @@ export default class Scene {
    * Animation frame callback (called at every frames).
    * @param {object} globalState - The state of the rolly instance.
    */
-  run(globalState) {
+  change(globalState) {
     if (!this.state.cache || this.state.caching) return false;
 
-    const viewSize =
-      this.options.direction === 'vertical'
-        ? globalState.height
-        : globalState.width;
+    const viewSize = this.options.direction === 'vertical'
+      ? globalState.height
+      : globalState.width;
     const { cache, active } = this.state;
 
     const { inView, transform, start } = this.calc(globalState);
     this.state.progress = this.getProgress(transform);
     this.state.progressInView = this.getProgressInView(start, viewSize);
 
-    let { [cache.type]: sceneOptions, ...options } = this.options.scenes;
+    let { [cache.type]: sceneOptions, ...options } = this.options.scenes; // eslint-disable-line prefer-const
 
     if (!sceneOptions) {
       sceneOptions = {};
@@ -174,21 +175,25 @@ export default class Scene {
       this.DOM.context.style.visibility = null;
 
       // Run
-      if (sceneOptions.run) sceneOptions.run.call(this, data);
-      else if (options.run) options.run.call(this, data);
+      if (sceneOptions.change) sceneOptions.change.call(this, data);
+      else if (options.change) options.change.call(this, data);
 
       // Enter
       if (this.checkEnter(active, this.state.progress)) {
         this.state.active = true;
-        if (sceneOptions.enter) sceneOptions.enter.call(this, data);
-        else if (options.enter) options.enter.call(this, data);
-      }
-
+        if (sceneOptions.enter) {
+          sceneOptions.enter.call(this, data);
+        } else if (options.enter) {
+          options.enter.call(this, data);
+        }
+      } else if (this.checkLeave(active, this.state.progress)) {
       // Leave
-      else if (this.checkLeave(active, this.state.progress)) {
         this.state.active = false;
-        if (sceneOptions.leave) sceneOptions.leave.call(this, data);
-        else if (options.leave) options.leave.call(this, data);
+        if (sceneOptions.leave) {
+          sceneOptions.leave.call(this, data);
+        } else if (options.leave) {
+          options.leave.call(this, data);
+        }
       }
 
       // Transform
@@ -203,6 +208,8 @@ export default class Scene {
       this.DOM.context.style.visibility = 'hidden';
       this.DOM.context.style.willChange = null;
     }
+
+    return true;
   }
 
   /**
@@ -216,16 +223,20 @@ export default class Scene {
    */
   calc(globalState) {
     const vertical = this.options.direction === 'vertical';
-    const { top, right, bottom, left, speed, offset } = this.state.cache;
+    const {
+      top, right, bottom, left, speed, offset,
+    } = this.state.cache;
     const { width, height, current } = globalState;
 
-    let transform = current * -speed - offset;
+    const transform = current * -speed - offset;
 
     const start = Math.round((vertical ? top : left) + transform);
     const end = Math.round((vertical ? bottom : right) + transform);
     const inView = end > 0 && start < (vertical ? height : width);
 
-    return { transform, start, end, inView };
+    return {
+      transform, start, end, inView,
+    };
   }
 
   /**
@@ -240,8 +251,7 @@ export default class Scene {
 
     const position = -transform + triggerOffset;
 
-    const progress =
-      (position - (vertical ? cache.top : cache.left)) / cache.size;
+    const progress = (position - (vertical ? cache.top : cache.left)) / cache.size;
 
     if (progress < 0 || progress > 1) return -1;
     return progress;

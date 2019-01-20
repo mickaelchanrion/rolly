@@ -3,5 +3,5 @@ const config = {
   native: true,
 };
 
-const r = rolly(config);
+const r = window.rolly(config);
 r.init();

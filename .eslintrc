@@ -1,0 +1,36 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+
+  "globals": {
+    "document": false,
+    "escape": false,
+    "navigator": false,
+    "unescape": false,
+    "window": false,
+    "describe": true,
+    "before": true,
+    "it": true,
+    "expect": true,
+    "sinon": true
+  },
+
+  "parser": "babel-eslint",
+
+  "plugins": [],
+
+  "extends": [
+    "airbnb-base"
+  ],
+
+  "rules": {
+    "no-unused-expressions": 0,
+    "no-param-reassign": 0,
+    "no-unused-vars": 0,
+    "max-len": ["error", { "code": 120 }],
+    "class-methods-use-this": 0
+  }
+}

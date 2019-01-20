@@ -3,12 +3,11 @@ const config = {
   preload: true,
   native: false,
   scenes: {
-    run(data) {
+    change(data) {
       const { context } = data.sceneState.cache;
       const { progress } = data.sceneState;
 
-      const readableProgress =
-        progress < 0 ? '-' : Math.round(progress * 100).toString() + '%';
+      const readableProgress = progress < 0 ? '-' : `${Math.round(progress * 100).toString()}%`;
 
       context.setAttribute('data-progress', readableProgress);
     },
@@ -37,19 +36,18 @@ const debug = {
     const triggers = document.querySelector('.triggers');
     const markers = {};
 
-    [...scenes].map(scene => {
+    [...scenes].map((scene) => {
       const type = scene.getAttribute('data-scene');
-      const trigger =
-        scene.getAttribute('data-trigger') || r.options.scenes.trigger;
+      const trigger = scene.getAttribute('data-trigger') || r.options.scenes.trigger;
       if (!markers[trigger]) {
         markers[trigger] = [];
       }
       markers[trigger].push(type);
     });
 
-    Object.entries(markers).map(marker => {
+    Object.entries(markers).map((marker) => {
       const types = marker[1].join(', ');
-      let trigger = marker[0];
+      const trigger = marker[0];
       let top = 0;
       if (trigger === 'middle') top = '50%';
       else if (trigger === 'end') top = '100%';
@@ -70,7 +68,7 @@ const debug = {
     this.state.debug = !this.state.debug;
 
     const scenes = document.querySelectorAll('.scene');
-    [...scenes].map(scene => {
+    [...scenes].map((scene) => {
       this.state.debug
         ? scene.classList.add('scene--debug')
         : scene.classList.remove('scene--debug');
@@ -80,7 +78,6 @@ const debug = {
   },
 };
 
-const r = rolly(config);
-
+const r = window.rolly(config);
 r.init();
 debug.init();

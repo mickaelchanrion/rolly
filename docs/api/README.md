@@ -57,7 +57,7 @@ The callback when Rolly is ready.
 - arguments:
   - `Object` globalState - The current [state of Rolly](#globalstate)
 
-### run
+### change
 
 Called on every frame while Rolly is in activity (updating transformations).
 
@@ -164,7 +164,7 @@ You have to return your extended cache data in an object.
     - globalState - The [state of Rolly](#globalstate)
     - sceneState - The [state of the scene](#scenestate)
 
-##### scenes.run
+##### scenes.change
 
 Called on every frame for every scenes visible in the view while Rolly is in activity (updating transformations).
 
