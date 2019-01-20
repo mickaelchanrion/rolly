@@ -2,8 +2,8 @@ const config = {
   view: document.querySelector('.app'),
   preload: true,
   native: false,
-  run(state) {
-    document.documentElement.style.backgroundColor = `hsl(${ (state.current / state.bounding) * 360}, 100%, 95%)`;
+  change(state) {
+    document.documentElement.style.backgroundColor = `hsl(${(state.current / state.bounding) * 360}, 100%, 95%)`;
   },
   scenes: {
     scaleY: {
@@ -14,7 +14,7 @@ const config = {
         const delta = current - previous;
         const scale = Math.min(1 + Math.abs(delta) / 75);
         context.style[transformPrefix] = `translate3d(0, ${transform}px, 0) scaleY(${scale})`;
-        context.style['transformOrigin'] = `50% ${50 - delta * 2}%`;
+        context.style.transformOrigin = `50% ${50 - delta * 2}%`;
       },
     },
     rotateZ: {
@@ -41,5 +41,5 @@ const config = {
   },
 };
 
-const r = rolly(config);
+const r = window.rolly(config);
 r.init();

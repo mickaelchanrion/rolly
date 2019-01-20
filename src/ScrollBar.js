@@ -16,7 +16,7 @@ export default class ScrollBar {
 
     this.state = {
       clicked: false,
-      thumb: { size: 0 }
+      thumb: { size: 0 },
     };
 
     this.cache(globalState);
@@ -42,10 +42,9 @@ export default class ScrollBar {
    * Animation frame callback (called at every frames).
    * @param {object} globalState - The state of the rolly instance.
    */
-  run({ current, transformPrefix }) {
+  change({ current, transformPrefix }) {
     const { bounding, viewSize } = this.state.cache;
-    const value =
-      Math.abs(current) / (bounding / (viewSize - this.thumbSize))
+    const value = Math.abs(current) / (bounding / (viewSize - this.thumbSize))
       + this.thumbSize / 0.5
       - this.thumbSize;
     const clamp = Math.max(0, Math.min(value - this.thumbSize, value + this.thumbSize));
@@ -108,6 +107,7 @@ export default class ScrollBar {
     document.removeEventListener('mousemove', this.boundFns.mouseMove);
     document.removeEventListener('mouseup', this.boundFns.mouseUp);
     delete this.boundFns;
+    return true;
   }
 
   /**
@@ -115,7 +115,7 @@ export default class ScrollBar {
    * @param {object} event - The event data.
    */
   click(event) {
-    const value = this.calc(this.options.direction == 'vertical' ? event.clientY : event.clientX);
+    const value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
     this.setTarget(value);
   }
 
@@ -137,7 +137,7 @@ export default class ScrollBar {
    */
   mouseMove(event) {
     if (this.state.clicked) {
-      const value = this.calc(this.options.direction == 'vertical' ? event.clientY : event.clientX);
+      const value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
       this.setTarget(value);
     }
   }
@@ -177,12 +177,12 @@ export default class ScrollBar {
     const { bounding } = this.state.cache;
     if (bounding <= 0) {
       this.DOM.context.classList.add('is-hidden');
-      return this.thumbSize = 0;
+      this.thumbSize = 0;
     }
 
     this.DOM.context.classList.remove('is-hidden');
     const { viewSize } = this.state.cache;
-    return this.thumbSize = viewSize * (viewSize / (bounding + viewSize));
+    this.thumbSize = viewSize * (viewSize / (bounding + viewSize));
   }
 
   /**

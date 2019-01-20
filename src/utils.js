@@ -6,7 +6,7 @@ const utils = {
   },
 
   getElements(selector, context = document) {
-    return [...context.querySelectorAll(selector)];
+    return Array.from(context.querySelectorAll(selector));
   },
 
   exportState(currentState, toExport) {
@@ -17,7 +17,7 @@ const utils = {
       .forEach(key => delete state[key]);
 
     return state;
-  }
+  },
 };
 
 export default utils;

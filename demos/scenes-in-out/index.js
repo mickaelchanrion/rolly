@@ -1,33 +1,37 @@
+// We don't want to show appear animations at the beginning
+let anim = false;
+setTimeout(() => (anim = true)); // eslint-disable-line no-return-assign
+
 const triggers = { top: 200, bottom: 200 };
 
-const animeIn = (targets, isUp) =>
-  anime({
-    targets,
-    duration: 800,
-    easing: 'easeOutQuart',
-    translateY: 0,
-    scaleY: 1,
-    opacity: 1,
-    begin: () => (targets.style.transformOrigin = isUp ? 'top' : 'bottom'),
-  });
+const { anime, rolly } = window;
 
-const animeOut = (targets, isUp) =>
-  anime({
-    targets,
-    duration: 800,
-    easing: 'easeInQuart',
-    translateY: isUp ? -200 : 200,
-    scaleY: { value: 1.5, duration: 600 },
-    opacity: 0,
-    begin: () => (targets.style.transformOrigin = isUp ? 'bottom' : 'top'),
-  });
+const animeIn = (targets, isUp) => anime({
+  targets,
+  duration: 800,
+  easing: 'easeOutQuart',
+  translateY: 0,
+  scaleY: 1,
+  opacity: 1,
+  begin: () => (targets.style.transformOrigin = isUp ? 'top' : 'bottom'), // eslint-disable-line no-return-assign
+});
+
+const animeOut = (targets, isUp) => anime({
+  targets,
+  duration: 800,
+  easing: 'easeInQuart',
+  translateY: isUp ? -200 : 200,
+  scaleY: { value: 1.5, duration: 600 },
+  opacity: 0,
+  begin: () => (targets.style.transformOrigin = isUp ? 'bottom' : 'top'), // eslint-disable-line no-return-assign
+});
 
 const config = {
   view: document.querySelector('.app'),
   preload: false,
   native: false,
   scenes: {
-    run(data) {
+    change(data) {
       const { sceneState, globalState, transform } = data;
       const { cache } = sceneState;
       const { context } = cache;
@@ -58,42 +62,31 @@ const config = {
             anime.remove(context.children[0]);
             animeIn(context.children[0], true);
           }
-        }
+        } else if (distanceTop > triggers.top && distanceBottom > triggers.bottom) {
         // Scroll down
-        else {
-          if (distanceTop > triggers.top && distanceBottom > triggers.bottom) {
-            sceneState.appeared = true;
-            anime.remove(context.children[0]);
-            animeIn(context.children[0], false);
-          }
+          sceneState.appeared = true;
+          anime.remove(context.children[0]);
+          animeIn(context.children[0], false);
         }
-      }
+      } else {
       // the scene is visible, let's see if we can hide it
-      else {
         // Scroll up
-        if (isUp) {
+        if (isUp) { // eslint-disable-line
           if (distanceTop < triggers.top) {
             sceneState.appeared = false;
             anime.remove(context.children[0]);
             animeOut(context.children[0], true);
           }
-        }
+        } else if (distanceBottom < triggers.bottom) {
         // Scroll down
-        else {
-          if (distanceBottom < triggers.bottom) {
-            sceneState.appeared = false;
-            anime.remove(context.children[0]);
-            animeOut(context.children[0], false);
-          }
+          sceneState.appeared = false;
+          anime.remove(context.children[0]);
+          animeOut(context.children[0], false);
         }
       }
     },
   },
 };
 
-// We don't want to show appear animations at start up
-let anim = false;
-setTimeout(() => (anim = true));
-
-const r = rolly(config);
+const r = window.rolly(config);
 r.init();
