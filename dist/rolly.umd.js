@@ -1,9 +1,9 @@
 /*!
- * rolly.js v0.2.0
- * (c) 2018-2019 Mickael Chanrion
- * Released under the MIT license
- */
-
+    * rolly.js v0.2.0
+    * (c) 2019 Mickael Chanrion
+    * Released under the MIT license
+    */
+  
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :

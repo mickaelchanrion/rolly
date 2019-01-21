@@ -1,10 +1,16 @@
 import pkg from '../package.json';
 
-const banner = `/*!
- * ${pkg.name}.js v${pkg.version}
- * (c) 2018-${new Date().getFullYear()} Mickael Chanrion
- * Released under the MIT license
- */
-`;
+export const getBanner = (
+  name,
+  version,
+  author,
+  license = 'MIT',
+  date = new Date().getFullYear(),
+) => `/*!
+    * ${name} v${version}
+    * (c) ${date} ${author}
+    * Released under the ${license} license
+    */
+  `;
 
-export default banner;
+export default getBanner(pkg.name, pkg.version, pkg.author);

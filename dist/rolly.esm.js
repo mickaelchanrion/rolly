@@ -1,9 +1,9 @@
 /*!
- * rolly.js v0.2.0
- * (c) 2018-2019 Mickael Chanrion
- * Released under the MIT license
- */
-
+    * rolly.js v0.2.0
+    * (c) 2019 Mickael Chanrion
+    * Released under the MIT license
+    */
+  
 import VirtualScroll from 'virtual-scroll';
 import prefix from 'prefix';
 

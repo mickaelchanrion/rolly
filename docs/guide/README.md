@@ -4,16 +4,28 @@
 
 rolly is a library written in javascript for building pages that moves smoothly.
 
-This library has been created with the idea of offering three features:
+This library was created with the aim of offering three features:
 - change the behavior of the default scroll for a smoother effect
 - quickly and flexibly add a customizable parallax effect to any element on a page
 - create interaction scenes related to the scroll position in a page
 
-## Quick start
+## Getting started
 
-- Setup the markup
+### Download rolly
 
-Here is a simple demo:
+```bash
+$ npm install rolly.js
+```
+
+Or add it as a script:
+```html
+<script src="https://unpkg.com/rolly.js@<VERSION>/dist/rolly.min.js"></script>
+```
+
+### Setup the markup
+
+Create your scenes:
+
 ```html
 <body>
   <style>
@@ -47,9 +59,13 @@ Here is a simple demo:
 </body>
 ```
 
-- Import the CSS of rolly: `rolly/css/style.css`
+### Import the CSS of rolly
 
-- Initialize rolly
+Import the CSS of rolly: `node_modules/rolly.js/css/style.css`
+
+Or from unpkg: `https://unpkg.com/rolly.js@<VERSION>/css/style.css`
+
+### Initialize rolly
 
 ```js
 import rolly from 'rolly.js';

@@ -14,14 +14,14 @@ const bubleOptions = {
 };
 
 const base = {
-  input: `./src/${pkg.name}.js`,
+  input: `./src/${pkg.moduleName}.js`,
 };
 
 const umd = {
   ...base,
   output: {
     banner,
-    name: pkg.name,
+    name: pkg.moduleName,
     file: pkg.browser,
     format: 'umd',
   },
@@ -52,8 +52,8 @@ if (!isDev) {
     ...base,
     output: {
       banner,
-      name: pkg.name,
-      file: `dist/${pkg.name}.min.js`,
+      name: pkg.moduleName,
+      file: `dist/${pkg.moduleName}.min.js`,
       format: 'iife',
     },
     plugins: [

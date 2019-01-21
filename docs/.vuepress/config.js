@@ -51,8 +51,8 @@ module.exports = {
     locales: {
       '/': {
         label: 'English',
-        title: 'VuePress',
-        description: 'Vue-powered Static Site Generator',
+        title: 'rolly.js',
+        description: 'Custom scroll with inertia, smooth parallax and scenes manager',
         selectText: 'Languages',
         editLinkText: 'Edit this page on GitHub',
         lastUpdated: 'Last Updated',
