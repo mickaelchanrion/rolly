@@ -25,7 +25,6 @@ const privated = {
    */
   initState() {
     this.state = {
-      // Global states
       current: 0,
       previous: 0,
       target: 0,
@@ -34,7 +33,11 @@ const privated = {
       bounding: 0,
       ready: false,
       preLoaded: false,
+      // The transform property to use
+      transformPrefix: prefix('transform'),
+    };
 
+    this.privateState = {
       // Animation frame
       rAF: undefined,
       /*
@@ -48,11 +51,7 @@ const privated = {
       // Native scroll
       debounceScroll: { timer: null, tick: false },
 
-      // Scroll to
       scrollTo: {},
-
-      // The transform property to use
-      transformPrefix: prefix('transform'),
     };
   },
 
@@ -76,7 +75,7 @@ const privated = {
    * Automatically stops when |target - current| < 0.1.
    */
   change() {
-    if (this.state.isRAFCanceled) return;
+    if (this.privateState.isRAFCanceled) return;
     privated.rAF.call(this);
 
     const diff = this.state.target - this.state.current;
@@ -91,21 +90,9 @@ const privated = {
       this.state.current += delta;
     }
 
-    const exportedState = utils.exportState(this.state, [
-      'current',
-      'previous',
-      'target',
-      'width',
-      'height',
-      'bounding',
-      'ready',
-      'preLoaded',
-      'transformPrefix',
-    ]);
-
-    if (Math.abs(diff) < 10 && this.state.scrollTo.callback) {
-      this.state.scrollTo.callback(exportedState);
-      this.state.scrollTo.callback = null;
+    if (Math.abs(diff) < 10 && this.privateState.scrollTo.callback) {
+      this.privateState.scrollTo.callback(this.state);
+      this.privateState.scrollTo.callback = null;
     }
 
     // Set scroll bar thumb position
@@ -115,10 +102,10 @@ const privated = {
 
     // Call custom change
     if (this.options.change) {
-      this.options.change(exportedState);
+      this.options.change(this.state);
     }
 
-    this.scenes.forEach(scene => scene.change(exportedState));
+    this.scenes.forEach(scene => scene.change(this.state));
 
     this.state.previous = this.state.current;
   },
@@ -127,16 +114,19 @@ const privated = {
    * Request an animation frame.
    */
   rAF() {
-    this.state.isRAFCanceled = false;
-    this.state.rAF = requestAnimationFrame(privated.change.bind(this));
+    this.privateState.isRAFCanceled = false;
+    if (this.state.changing) {
+      this.options.changeStart(this.state);
+    }
+    this.privateState.rAF = requestAnimationFrame(privated.change.bind(this));
   },
 
   /**
    * Cancel a requested animation frame.
    */
   cAF() {
-    this.state.isRAFCanceled = true;
-    this.state.rAF = cancelAnimationFrame(this.state.rAF);
+    this.privateState.isRAFCanceled = true;
+    this.privateState.rAF = cancelAnimationFrame(this.privateState.rAF);
   },
 
   /*
@@ -164,7 +154,7 @@ const privated = {
    * @param {object} e - The event data.
    */
   virtualScroll(e) {
-    if (this.state.scrollTo.callback) return;
+    if (this.privateState.scrollTo.callback) return;
     const delta = this.options.vertical ? e.deltaY : e.deltaX;
     privated.setTarget.call(this, this.state.target + delta * -1);
   },
@@ -174,7 +164,7 @@ const privated = {
    * @param {object} e - The event data.
    */
   debounceScroll(e) {
-    if (this.state.scrollTo.callback) return;
+    if (this.privateState.scrollTo.callback) return;
     const isWindow = this.DOM.listener === document.body;
 
     let target;
@@ -191,15 +181,15 @@ const privated = {
 
     privated.setTarget.call(this, target);
 
-    clearTimeout(this.state.debounceScroll.timer);
+    clearTimeout(this.privateState.debounceScroll.timer);
 
-    if (!this.state.debounceScroll.tick) {
-      this.state.debounceScroll.tick = true;
+    if (!this.privateState.debounceScroll.tick) {
+      this.privateState.debounceScroll.tick = true;
       this.DOM.listener.classList.add('is-scrolling');
     }
 
-    this.state.debounceScroll.timer = setTimeout(() => {
-      this.state.debounceScroll.tick = false;
+    this.privateState.debounceScroll.timer = setTimeout(() => {
+      this.privateState.debounceScroll.tick = false;
       this.DOM.listener.classList.remove('is-scrolling');
     }, 200);
   },
@@ -360,7 +350,7 @@ const privated = {
     this.state.target = Math.round(
       Math.max(0, Math.min(target, this.state.bounding)),
     );
-    !this.state.rAF && privated.rAF.call(this);
+    !this.privateState.rAF && privated.rAF.call(this);
   },
 };
 
@@ -540,7 +530,7 @@ class Rolly {
     };
     options = { ...defaultOptions, ...options };
 
-    const { vertical } = this.options.direction;
+    const { vertical } = this.options;
     const scrollOffset = this.state.current;
     let bounding = null;
     let newPos = scrollOffset + options.offset;
@@ -574,7 +564,7 @@ class Rolly {
     }
 
     if (options.callback) {
-      this.state.scrollTo.callback = options.callback;
+      this.privateState.scrollTo.callback = options.callback;
     }
 
     // FIXME: if the scrollable element is not the body, this won't work
