@@ -27,12 +27,13 @@ const privated = {
     this.state = {
       current: 0,
       previous: 0,
-      target: 0,
+      target: null,
       width: window.innerWidth,
       height: window.innerHeight,
       bounding: 0,
       ready: false,
       preLoaded: false,
+      changing: false,
       // The transform property to use
       transformPrefix: prefix('transform'),
     };
@@ -86,8 +87,16 @@ const privated = {
       privated.cAF.call(this);
       delta = 0;
       this.state.current = this.state.target;
+      if (this.state.changing) {
+        this.state.changing = false;
+        this.options.changeEnd(this.state);
+      }
     } else {
       this.state.current += delta;
+      if (!this.state.changing) {
+        this.state.changing = true;
+        this.options.changeStart(this.state);
+      }
     }
 
     if (Math.abs(diff) < 10 && this.privateState.scrollTo.callback) {
@@ -101,9 +110,7 @@ const privated = {
     }
 
     // Call custom change
-    if (this.options.change) {
-      this.options.change(this.state);
-    }
+    this.options.change(this.state);
 
     this.scenes.forEach(scene => scene.change(this.state));
 
@@ -115,9 +122,6 @@ const privated = {
    */
   rAF() {
     this.privateState.isRAFCanceled = false;
-    if (this.state.changing) {
-      this.options.changeStart(this.state);
-    }
     this.privateState.rAF = requestAnimationFrame(privated.change.bind(this));
   },
 
@@ -141,9 +145,7 @@ const privated = {
       this.state.ready
       && (this.options.preload ? this.state.preLoaded : true)
     ) {
-      if (this.options.ready) {
-        this.options.ready(this.state);
-      }
+      this.options.ready(this.state);
       return true;
     }
     return false;
@@ -316,8 +318,10 @@ const privated = {
       view: utils.getElements('.rolly-view')[0] || null,
       native: false,
       preload: true,
-      ready: null,
-      change: null,
+      ready: () => {},
+      change: () => {},
+      changeStart: () => {},
+      changeEnd: () => {},
       ease: 0.075,
       virtualScroll: {
         limitInertia: false,
@@ -347,6 +351,7 @@ const privated = {
    * Sets the target position with auto clamping.
    */
   setTarget(target) {
+    // if (target === null) return;
     this.state.target = Math.round(
       Math.max(0, Math.min(target, this.state.bounding)),
     );

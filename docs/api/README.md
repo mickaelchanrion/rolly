@@ -50,7 +50,7 @@ If true, Rolly will load every images contained in the scenes and then, refresh 
 The callback when Rolly is ready.
 
 - type: `Function`
-- default: `null`
+- default: `() => {}`
 - arguments:
   - `Object` globalState - The current [state of Rolly](#globalstate)
 
@@ -58,8 +58,26 @@ The callback when Rolly is ready.
 
 Called on every frame while Rolly is in activity (updating transformations).
 
-- type: `Function` with
-- default: `null`
+- type: `Function`
+- default: `() => {}`
+- arguments:
+  - `Object` globalState - The current [state of Rolly](#globalstate)
+
+### changeStart
+
+Called when Rolly resumes its activity.
+
+- type: `Function`
+- default: `() => {}`
+- arguments:
+  - `Object` globalState - The current [state of Rolly](#globalstate)
+
+### changeEnd
+
+Called when Rolly stops its activity.
+
+- type: `Function`
+- default: `() => {}`
 - arguments:
   - `Object` globalState - The current [state of Rolly](#globalstate)
 
