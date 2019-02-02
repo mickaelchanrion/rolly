@@ -1,6 +1,6 @@
 <h1 align="center">rolly.js</h1>
 <br>
-<p align="center">Custom scroll behavior with inertia, smooth parallax as hell and scenes.</p>
+<p align="center">Custom scroll with inertia, smooth parallax and scenes manager.</p>
 <p align="center">
   <a href="https://www.npmjs.com/package/rolly.js">
 		<img src="https://img.shields.io/npm/v/rolly.js.svg" alt="Version">
@@ -15,9 +15,12 @@
 rolly is a library written in javascript for building pages that moves smoothly.
 
 This library was created with the aim of offering three features:
+
 - change the behavior of the default scroll for a smoother effect
 - quickly and flexibly add a customizable parallax effect to any element on a page
-- create interaction scenes related to the scroll position in a page
+- add any behavior to your scenes bound to the scroll state (custom transforms, seek animations…)
+
+[Examples](https://codepen.io/collection/AyEJzY/)
 
 ## Getting started
 
@@ -28,6 +31,7 @@ $ npm install rolly.js
 ```
 
 Or add it as a script:
+
 ```html
 <script src="https://unpkg.com/rolly.js@<VERSION>/dist/rolly.min.js"></script>
 ```
@@ -47,12 +51,20 @@ Create your scenes:
       font-size: 100px;
       color: #fff;
       text-align: center;
-      background: linear-gradient(to top, rgb(252, 92, 125), rgb(106, 130, 251));
+      background: linear-gradient(
+        to top,
+        rgb(252, 92, 125),
+        rgb(106, 130, 251)
+      );
       border-radius: 5px;
     }
 
     [data-scene]:first-child {
-      background: linear-gradient(to bottom, rgb(168, 192, 255), rgb(63, 43, 150));
+      background: linear-gradient(
+        to bottom,
+        rgb(168, 192, 255),
+        rgb(63, 43, 150)
+      );
     }
 
     [data-scene]:last-child {
