@@ -33,7 +33,7 @@
   display: none;
 }
 
-.rolly-scroll-bar.rolly-vertical {
+.rolly-scroll-bar.y-scroll {
   top: 0;
   right: 0;
   bottom: 0;
@@ -43,7 +43,7 @@
   transform-origin: right;
 }
 
-.rolly-scroll-bar.rolly-horizontal {
+.rolly-scroll-bar.x-scroll {
   bottom: 0;
   left: 0;
   right: 0;

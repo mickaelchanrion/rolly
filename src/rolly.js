@@ -165,7 +165,7 @@ const privated = {
    */
   virtualScroll(e) {
     if (this.state.scrollTo.callback) return;
-    const delta = this.options.direction === 'horizontal' ? e.deltaX : e.deltaY;
+    const delta = this.options.vertical ? e.deltaY : e.deltaX;
     privated.setTarget.call(this, this.state.target + delta * -1);
   },
 
@@ -179,7 +179,7 @@ const privated = {
 
     let target;
 
-    if (this.options.direction === 'vertical') {
+    if (this.options.vertical) {
       target = isWindow
         ? window.scrollY || window.pageYOffset
         : this.DOM.listener.scrollTop;
@@ -209,14 +209,14 @@ const privated = {
    * @param {object} e - The event data.
    */
   resize(e) {
-    const prop = this.options.direction === 'vertical' ? 'height' : 'width';
+    const prop = this.options.vertical ? 'height' : 'width';
     this.state.height = window.innerHeight;
     this.state.width = window.innerWidth;
 
     // Calc bounding
-    const { native, direction } = this.options;
+    const { native, vertical } = this.options;
     const bounding = this.DOM.view.getBoundingClientRect();
-    this.state.bounding = direction === 'vertical'
+    this.state.bounding = vertical
       ? bounding.height - (native ? 0 : this.state.height)
       : bounding.right - (native ? 0 : this.state.width);
 
@@ -321,7 +321,7 @@ const privated = {
    */
   getDefaults() {
     return {
-      direction: 'vertical',
+      vertical: true,
       listener: document.body,
       view: utils.getElements('.rolly-view')[0] || null,
       native: false,
@@ -404,7 +404,7 @@ class Rolly {
     privated.initState.call(this);
 
     const type = this.options.native ? 'native' : 'virtual';
-    const direction = this.options.direction === 'vertical' ? 'y' : 'x';
+    const direction = this.options.vertical ? 'y' : 'x';
 
     this.DOM.listener.classList.add(`is-${type}-scroll`);
     this.DOM.listener.classList.add(`${direction}-scroll`);
@@ -485,7 +485,7 @@ class Rolly {
    */
   destroy() {
     const type = this.options.native ? 'native' : 'virtual';
-    const direction = this.options.direction === 'vertical' ? 'y' : 'x';
+    const direction = this.options.vertical ? 'y' : 'x';
 
     this.DOM.listener.classList.remove(`is-${type}-scroll`);
     this.DOM.listener.classList.remove(`${direction}-scroll`);
@@ -540,7 +540,7 @@ class Rolly {
     };
     options = { ...defaultOptions, ...options };
 
-    const vertical = this.options.direction === 'vertical';
+    const { vertical } = this.options.direction;
     const scrollOffset = this.state.current;
     let bounding = null;
     let newPos = scrollOffset + options.offset;
@@ -579,7 +579,7 @@ class Rolly {
 
     // FIXME: if the scrollable element is not the body, this won't work
     if (this.options.native) {
-      this.options.direction === 'vertical'
+      this.options.vertical
         ? window.scrollTo(0, newPos)
         : window.scrollTo(newPos, 0);
     } else {

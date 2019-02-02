@@ -31,10 +31,7 @@ export default class ScrollBar {
   cache(globalState) {
     this.state.cache = {
       bounding: globalState.bounding,
-      viewSize:
-        this.options.direction === 'vertical'
-          ? globalState.height
-          : globalState.width,
+      viewSize: this.options.vertical ? globalState.height : globalState.width,
     };
     this.updateThumbSize();
   }
@@ -53,7 +50,7 @@ export default class ScrollBar {
     const clamp = Math.max(0, Math.min(value - thumbSize, value + thumbSize));
     this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(
       clamp.toFixed(2),
-      this.options.direction,
+      this.options.vertical,
     );
   }
 
@@ -73,7 +70,8 @@ export default class ScrollBar {
    */
   render(parent) {
     const context = document.createElement('div');
-    context.className = `rolly-scroll-bar rolly-${this.options.direction}`;
+    const direction = this.options.vertical ? 'y' : 'x';
+    context.className = `rolly-scroll-bar ${direction}-scroll`;
 
     const thumb = document.createElement('div');
     thumb.className = 'rolly-scroll-bar-thumb';
@@ -121,9 +119,7 @@ export default class ScrollBar {
    * @param {object} event - The event data.
    */
   click(event) {
-    const value = this.calc(
-      this.options.direction === 'vertical' ? event.clientY : event.clientX,
-    );
+    const value = this.calc(this.options.vertical ? event.clientY : event.clientX);
     this.setTarget(value);
   }
 
@@ -145,9 +141,7 @@ export default class ScrollBar {
    */
   mouseMove(event) {
     if (this.state.clicked) {
-      const value = this.calc(
-        this.options.direction === 'vertical' ? event.clientY : event.clientX,
-      );
+      const value = this.calc(this.options.vertical ? event.clientY : event.clientX);
       this.setTarget(value);
     }
   }
@@ -175,7 +169,7 @@ export default class ScrollBar {
    */
   set thumbSize(size) {
     this.state.thumb.size = size;
-    const prop = this.options.direction === 'vertical' ? 'height' : 'width';
+    const prop = this.options.vertical ? 'height' : 'width';
     this.DOM.thumb.style[prop] = `${size}px`;
   }
 

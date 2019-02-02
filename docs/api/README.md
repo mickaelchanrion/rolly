@@ -6,15 +6,12 @@ sidebar: auto
 
 ## Options
 
-### direction
+### vertical
 
-The scroll direction.
+Whether the scroll direction is vertical or horizontal.
 
-- type: `String`
-- default: `'vertical'`
-- accepted values:
-  - `'vertical'`
-  - `'horizontal'` <Badge text="alpha" type="warn"/>
+- type: `Boolean`
+- default: `true`
 
 ::: warning
 `horizontal` mode is still under development and has not been fully tested. You might discover some bugs.

@@ -1,6 +1,6 @@
 const utils = {
-  getCSSTransform(value, direction) {
-    return direction === 'vertical'
+  getCSSTransform(value, vertical) {
+    return vertical
       ? `translate3d(0, ${value}px, 0)`
       : `translate3d(${value}px, 0, 0)`;
   },

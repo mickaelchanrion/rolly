@@ -49,7 +49,7 @@ export default class Scene {
     return new Promise((resolve, reject) => {
       this.state.caching = true;
 
-      const vertical = this.options.direction === 'vertical';
+      const { vertical } = this.options;
       // TODO: see when we need this
       // const scrollOffset = globalState.target;
       const scrollOffset = 0;
@@ -141,7 +141,7 @@ export default class Scene {
   change(globalState) {
     if (!this.state.cache || this.state.caching) return false;
 
-    const viewSize = this.options.direction === 'vertical'
+    const viewSize = this.options.vertical
       ? globalState.height
       : globalState.width;
     const { cache, active } = this.state;
@@ -201,12 +201,12 @@ export default class Scene {
       else {
         this.DOM.context.style[
           globalState.transformPrefix
-        ] = utils.getCSSTransform(transform, this.options.direction);
+        ] = utils.getCSSTransform(transform, this.options.vertical);
       }
     } else {
       this.DOM.context.style[
         globalState.transformPrefix
-      ] = utils.getCSSTransform(globalState.bounding, this.options.direction);
+      ] = utils.getCSSTransform(globalState.bounding, this.options.vertical);
       this.DOM.context.style.willChange = null;
     }
 
@@ -223,7 +223,7 @@ export default class Scene {
    * - inView: whether the scene is in the viewport
    */
   calc(globalState) {
-    const vertical = this.options.direction === 'vertical';
+    const { vertical } = this.options;
     const {
       top, right, bottom, left, speed, offset,
     } = this.state.cache;
@@ -246,7 +246,7 @@ export default class Scene {
    * @return {number} The progress position.
    */
   getProgress(transform) {
-    const vertical = this.options.direction === 'vertical';
+    const { vertical } = this.options;
     const { cache } = this.state;
     const { triggerOffset } = cache;
 
