@@ -216,9 +216,9 @@ const privated = {
     // Calc bounding
     const { native, direction } = this.options;
     const bounding = this.DOM.view.getBoundingClientRect();
-    this.state.bounding =      direction === 'vertical'
-        ? bounding.height - (native ? 0 : this.state.height)
-        : bounding.right - (native ? 0 : this.state.width);
+    this.state.bounding = direction === 'vertical'
+      ? bounding.height - (native ? 0 : this.state.height)
+      : bounding.right - (native ? 0 : this.state.width);
 
     // Set scroll bar thumb height (according to view height)
     if (this.scrollBar) {

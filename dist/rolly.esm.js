@@ -1,5 +1,5 @@
 /*!
-    * rolly.js v0.2.0
+    * rolly.js v0.2.2
     * (c) 2019 Mickael Chanrion
     * Released under the MIT license
     */
@@ -209,7 +209,6 @@ Scene.prototype.change = function change (globalState) {
   // Check and then trigger callbacks
   if (inView) {
     this.DOM.context.style.willChange = 'transform';
-    this.DOM.context.style.visibility = null;
 
     // Run
     if (sceneOptions.change) { sceneOptions.change.call(this, data); }
@@ -242,7 +241,9 @@ Scene.prototype.change = function change (globalState) {
       ] = utils.getCSSTransform(transform, this.options.direction);
     }
   } else {
-    this.DOM.context.style.visibility = 'hidden';
+    this.DOM.context.style[
+      globalState.transformPrefix
+    ] = utils.getCSSTransform(globalState.bounding, this.options.direction);
     this.DOM.context.style.willChange = null;
   }
 
@@ -354,9 +355,10 @@ var prototypeAccessors = { thumbSize: { configurable: true } };
 ScrollBar.prototype.cache = function cache (globalState) {
   this.state.cache = {
     bounding: globalState.bounding,
-    viewSize: this.options.direction === 'vertical'
-      ? globalState.height
-      : globalState.width,
+    viewSize:
+      this.options.direction === 'vertical'
+        ? globalState.height
+        : globalState.width,
   };
   this.updateThumbSize();
 };
@@ -372,11 +374,17 @@ ScrollBar.prototype.change = function change (ref) {
   var ref$1 = this.state.cache;
     var bounding = ref$1.bounding;
     var viewSize = ref$1.viewSize;
-  var value = Math.abs(current) / (bounding / (viewSize - this.thumbSize))
-    + this.thumbSize / 0.5
-    - this.thumbSize;
-  var clamp = Math.max(0, Math.min(value - this.thumbSize, value + this.thumbSize));
-  this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(clamp.toFixed(2), this.options.direction);
+  var ref$2 = this;
+    var thumbSize = ref$2.thumbSize;
+  var value = Math.abs(current) / (bounding / (viewSize - thumbSize))
+    + thumbSize / 0.5
+    - thumbSize;
+
+  var clamp = Math.max(0, Math.min(value - thumbSize, value + thumbSize));
+  this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(
+    clamp.toFixed(2),
+    this.options.direction
+  );
 };
 
 /**
@@ -443,7 +451,9 @@ ScrollBar.prototype.off = function off () {
  * @param {object} event - The event data.
  */
 ScrollBar.prototype.click = function click (event) {
-  var value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
+  var value = this.calc(
+    this.options.direction === 'vertical' ? event.clientY : event.clientX
+  );
   this.setTarget(value);
 };
 
@@ -465,7 +475,9 @@ ScrollBar.prototype.mouseDown = function mouseDown (event) {
  */
 ScrollBar.prototype.mouseMove = function mouseMove (event) {
   if (this.state.clicked) {
-    var value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
+    var value = this.calc(
+      this.options.direction === 'vertical' ? event.clientY : event.clientX
+    );
     this.setTarget(value);
   }
 };
@@ -476,7 +488,7 @@ ScrollBar.prototype.mouseMove = function mouseMove (event) {
  */
 ScrollBar.prototype.mouseUp = function mouseUp (event) {
   this.state.clicked = false;
-  this.DOM.parent.classList.remove('is-dragging');
+  this.DOM.parent.classList.remove('is-dragging-scroll-bar');
 };
 
 /**
@@ -743,15 +755,18 @@ var privated = {
     this.state.width = window.innerWidth;
 
     // Calc bounding
+    var ref = this.options;
+    var native = ref.native;
+    var direction = ref.direction;
     var bounding = this.DOM.view.getBoundingClientRect();
-    this.state.bounding = this.options.direction === 'vertical'
-      ? bounding.height - (this.options.native ? 0 : this.state.height)
-      : bounding.right - (this.options.native ? 0 : this.state.width);
+    this.state.bounding = direction === 'vertical'
+      ? bounding.height - (native ? 0 : this.state.height)
+      : bounding.right - (native ? 0 : this.state.width);
 
     // Set scroll bar thumb height (according to view height)
     if (this.scrollBar) {
       this.scrollBar.cache(this.state);
-    } else if (this.options.native) {
+    } else if (native) {
       this.DOM.scroll.style[prop] = (this.state.bounding) + "px";
     }
 
@@ -1017,8 +1032,10 @@ Rolly.prototype.destroy = function destroy () {
   this.DOM.listener.classList.remove((direction + "-scroll"));
   this.DOM.view.classList.remove('rolly-view');
 
-  this.virtualScroll
-    && (this.virtualScroll.destroy(), (this.virtualScroll = null));
+  if (this.virtualScroll) {
+    this.virtualScroll.destroy();
+    this.virtualScroll = null;
+  }
 
   this.off();
 

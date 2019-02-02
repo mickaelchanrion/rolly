@@ -172,7 +172,6 @@ export default class Scene {
     // Check and then trigger callbacks
     if (inView) {
       this.DOM.context.style.willChange = 'transform';
-      this.DOM.context.style.visibility = null;
 
       // Run
       if (sceneOptions.change) sceneOptions.change.call(this, data);
@@ -205,7 +204,9 @@ export default class Scene {
         ] = utils.getCSSTransform(transform, this.options.direction);
       }
     } else {
-      this.DOM.context.style.visibility = 'hidden';
+      this.DOM.context.style[
+        globalState.transformPrefix
+      ] = utils.getCSSTransform(globalState.bounding, this.options.direction);
       this.DOM.context.style.willChange = null;
     }
 
