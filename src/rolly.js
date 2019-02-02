@@ -214,15 +214,16 @@ const privated = {
     this.state.width = window.innerWidth;
 
     // Calc bounding
+    const { native, direction } = this.options;
     const bounding = this.DOM.view.getBoundingClientRect();
-    this.state.bounding = this.options.direction === 'vertical'
-      ? bounding.height - (this.options.native ? 0 : this.state.height)
-      : bounding.right - (this.options.native ? 0 : this.state.width);
+    this.state.bounding =      direction === 'vertical'
+        ? bounding.height - (native ? 0 : this.state.height)
+        : bounding.right - (native ? 0 : this.state.width);
 
     // Set scroll bar thumb height (according to view height)
     if (this.scrollBar) {
       this.scrollBar.cache(this.state);
-    } else if (this.options.native) {
+    } else if (native) {
       this.DOM.scroll.style[prop] = `${this.state.bounding}px`;
     }
 
@@ -490,8 +491,10 @@ class Rolly {
     this.DOM.listener.classList.remove(`${direction}-scroll`);
     this.DOM.view.classList.remove('rolly-view');
 
-    this.virtualScroll
-      && (this.virtualScroll.destroy(), (this.virtualScroll = null));
+    if (this.virtualScroll) {
+      this.virtualScroll.destroy();
+      this.virtualScroll = null;
+    }
 
     this.off();
 
