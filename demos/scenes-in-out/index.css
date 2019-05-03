@@ -17,5 +17,4 @@ body {
   position: relative;
   background-color: #fff;
   padding: 20px;
-  will-change: opacity, transform;
 }

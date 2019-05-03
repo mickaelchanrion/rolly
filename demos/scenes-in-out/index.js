@@ -4,7 +4,7 @@ setTimeout(() => (anim = true)); // eslint-disable-line no-return-assign
 
 const triggers = { top: 200, bottom: 200 };
 
-const { anime, rolly } = window;
+const { anime } = window;
 
 const animeIn = (targets, isUp) => anime({
   targets,

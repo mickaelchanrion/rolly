@@ -1,7 +1,13 @@
+const pkg = require('../../package');
+
+const { title, description } = pkg;
+
 module.exports = {
   base: '/rolly/',
+  title,
+  description,
   head: [
-    ['link', { rel: 'icon', href: `/logo.png` }],
+    // ['link', { rel: 'icon', href: `/logo.png` }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
     ['meta', { name: 'theme-color', content: '#384cff' }],
     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
@@ -51,8 +57,8 @@ module.exports = {
     locales: {
       '/': {
         label: 'English',
-        title: 'rolly.js',
-        description: 'Custom scroll with inertia, smooth parallax and scenes manager',
+        title,
+        description,
         selectText: 'Languages',
         editLinkText: 'Edit this page on GitHub',
         lastUpdated: 'Last Updated',
@@ -74,6 +80,10 @@ module.exports = {
           {
             text: 'Demo',
             link: 'https://rolly.maj.digital',
+          },
+          {
+            text: 'Examples',
+            link: 'https://codepen.io/collection/AyEJzY/',
           },
           {
             text: 'Changelog',

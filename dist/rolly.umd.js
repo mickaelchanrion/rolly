@@ -1,5 +1,5 @@
 /*!
-    * rolly.js v0.2.0
+    * rolly.js v0.3.1
     * (c) 2019 Mickael Chanrion
     * Released under the MIT license
     */
@@ -611,8 +611,8 @@
 	prefix_1.dash = dash;
 
 	var utils = {
-	  getCSSTransform: function getCSSTransform(value, direction) {
-	    return direction === 'vertical'
+	  getCSSTransform: function getCSSTransform(value, vertical) {
+	    return vertical
 	      ? ("translate3d(0, " + value + "px, 0)")
 	      : ("translate3d(" + value + "px, 0, 0)");
 	  },
@@ -621,16 +621,6 @@
 	    if ( context === void 0 ) context = document;
 
 	    return Array.from(context.querySelectorAll(selector));
-	  },
-
-	  exportState: function exportState(currentState, toExport) {
-	    var state = Object.assign({}, currentState);
-
-	    Object.keys(state)
-	      .filter(function (key) { return !toExport.includes(key); })
-	      .forEach(function (key) { return delete state[key]; });
-
-	    return state;
 	  },
 	};
 
@@ -680,15 +670,16 @@
 	  return new Promise(function (resolve, reject) {
 	    this$1.state.caching = true;
 
-	    var vertical = this$1.options.direction === 'vertical';
+	    var ref = this$1.options;
+	      var vertical = ref.vertical;
 	    // TODO: see when we need this
 	    // const scrollOffset = globalState.target;
 	    var scrollOffset = 0;
 
 	    var viewSize = vertical ? globalState.height : globalState.width;
 
-	    var ref = this$1.DOM;
-	      var context = ref.context;
+	    var ref$1 = this$1.DOM;
+	      var context = ref$1.context;
 	    context.style.display = null;
 	    var computedStyle = window.getComputedStyle(context);
 	    if (computedStyle.display === 'none') {
@@ -773,7 +764,7 @@
 	Scene.prototype.change = function change (globalState) {
 	  if (!this.state.cache || this.state.caching) { return false; }
 
-	  var viewSize = this.options.direction === 'vertical'
+	  var viewSize = this.options.vertical
 	    ? globalState.height
 	    : globalState.width;
 	  var ref = this.state;
@@ -812,7 +803,6 @@
 	  // Check and then trigger callbacks
 	  if (inView) {
 	    this.DOM.context.style.willChange = 'transform';
-	    this.DOM.context.style.visibility = null;
 
 	    // Run
 	    if (sceneOptions.change) { sceneOptions.change.call(this, data); }
@@ -842,10 +832,12 @@
 	    else {
 	      this.DOM.context.style[
 	        globalState.transformPrefix
-	      ] = utils.getCSSTransform(transform, this.options.direction);
+	      ] = utils.getCSSTransform(transform, this.options.vertical);
 	    }
 	  } else {
-	    this.DOM.context.style.visibility = 'hidden';
+	    this.DOM.context.style[
+	      globalState.transformPrefix
+	    ] = utils.getCSSTransform(globalState.bounding, this.options.vertical);
 	    this.DOM.context.style.willChange = null;
 	  }
 
@@ -862,14 +854,15 @@
 	 * - inView: whether the scene is in the viewport
 	 */
 	Scene.prototype.calc = function calc (globalState) {
-	  var vertical = this.options.direction === 'vertical';
-	  var ref = this.state.cache;
-	    var top = ref.top;
-	    var right = ref.right;
-	    var bottom = ref.bottom;
-	    var left = ref.left;
-	    var speed = ref.speed;
-	    var offset = ref.offset;
+	  var ref = this.options;
+	    var vertical = ref.vertical;
+	  var ref$1 = this.state.cache;
+	    var top = ref$1.top;
+	    var right = ref$1.right;
+	    var bottom = ref$1.bottom;
+	    var left = ref$1.left;
+	    var speed = ref$1.speed;
+	    var offset = ref$1.offset;
 	  var width = globalState.width;
 	    var height = globalState.height;
 	    var current = globalState.current;
@@ -891,9 +884,10 @@
 	 * @return {number} The progress position.
 	 */
 	Scene.prototype.getProgress = function getProgress (transform) {
-	  var vertical = this.options.direction === 'vertical';
-	  var ref = this.state;
-	    var cache = ref.cache;
+	  var ref = this.options;
+	    var vertical = ref.vertical;
+	  var ref$1 = this.state;
+	    var cache = ref$1.cache;
 	  var triggerOffset = cache.triggerOffset;
 
 	  var position = -transform + triggerOffset;
@@ -957,9 +951,7 @@
 	ScrollBar.prototype.cache = function cache (globalState) {
 	  this.state.cache = {
 	    bounding: globalState.bounding,
-	    viewSize: this.options.direction === 'vertical'
-	      ? globalState.height
-	      : globalState.width,
+	    viewSize: this.options.vertical ? globalState.height : globalState.width,
 	  };
 	  this.updateThumbSize();
 	};
@@ -975,11 +967,17 @@
 	  var ref$1 = this.state.cache;
 	    var bounding = ref$1.bounding;
 	    var viewSize = ref$1.viewSize;
-	  var value = Math.abs(current) / (bounding / (viewSize - this.thumbSize))
-	    + this.thumbSize / 0.5
-	    - this.thumbSize;
-	  var clamp = Math.max(0, Math.min(value - this.thumbSize, value + this.thumbSize));
-	  this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(clamp.toFixed(2), this.options.direction);
+	  var ref$2 = this;
+	    var thumbSize = ref$2.thumbSize;
+	  var value = Math.abs(current) / (bounding / (viewSize - thumbSize))
+	    + thumbSize / 0.5
+	    - thumbSize;
+
+	  var clamp = Math.max(0, Math.min(value - thumbSize, value + thumbSize));
+	  this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(
+	    clamp.toFixed(2),
+	    this.options.vertical
+	  );
 	};
 
 	/**
@@ -998,7 +996,8 @@
 	 */
 	ScrollBar.prototype.render = function render (parent) {
 	  var context = document.createElement('div');
-	  context.className = "rolly-scroll-bar rolly-" + (this.options.direction);
+	  var direction = this.options.vertical ? 'y' : 'x';
+	  context.className = "rolly-scroll-bar " + direction + "-scroll";
 
 	  var thumb = document.createElement('div');
 	  thumb.className = 'rolly-scroll-bar-thumb';
@@ -1046,7 +1045,7 @@
 	 * @param {object} event - The event data.
 	 */
 	ScrollBar.prototype.click = function click (event) {
-	  var value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
+	  var value = this.calc(this.options.vertical ? event.clientY : event.clientX);
 	  this.setTarget(value);
 	};
 
@@ -1068,7 +1067,7 @@
 	 */
 	ScrollBar.prototype.mouseMove = function mouseMove (event) {
 	  if (this.state.clicked) {
-	    var value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
+	    var value = this.calc(this.options.vertical ? event.clientY : event.clientX);
 	    this.setTarget(value);
 	  }
 	};
@@ -1079,7 +1078,7 @@
 	 */
 	ScrollBar.prototype.mouseUp = function mouseUp (event) {
 	  this.state.clicked = false;
-	  this.DOM.parent.classList.remove('is-dragging');
+	  this.DOM.parent.classList.remove('is-dragging-scroll-bar');
 	};
 
 	/**
@@ -1096,7 +1095,7 @@
 	 */
 	prototypeAccessors.thumbSize.set = function (size) {
 	  this.state.thumb.size = size;
-	  var prop = this.options.direction === 'vertical' ? 'height' : 'width';
+	  var prop = this.options.vertical ? 'height' : 'width';
 	  this.DOM.thumb.style[prop] = size + "px";
 	};
 
@@ -1110,6 +1109,7 @@
 	  if (bounding <= 0) {
 	    this.DOM.context.classList.add('is-hidden');
 	    this.thumbSize = 0;
+	    return;
 	  }
 
 	  this.DOM.context.classList.remove('is-hidden');
@@ -1152,16 +1152,20 @@
 	   */
 	  initState: function initState() {
 	    this.state = {
-	      // Global states
 	      current: 0,
 	      previous: 0,
-	      target: 0,
+	      target: null,
 	      width: window.innerWidth,
 	      height: window.innerHeight,
 	      bounding: 0,
 	      ready: false,
 	      preLoaded: false,
+	      changing: false,
+	      // The transform property to use
+	      transformPrefix: prefix_1('transform'),
+	    };
 
+	    this.privateState = {
 	      // Animation frame
 	      rAF: undefined,
 	      /*
@@ -1175,11 +1179,7 @@
 	      // Native scroll
 	      debounceScroll: { timer: null, tick: false },
 
-	      // Scroll to
 	      scrollTo: {},
-
-	      // The transform property to use
-	      transformPrefix: prefix_1('transform'),
 	    };
 	  },
 
@@ -1205,7 +1205,9 @@
 	   * Automatically stops when |target - current| < 0.1.
 	   */
 	  change: function change() {
-	    if (this.state.isRAFCanceled) { return; }
+	    var this$1 = this;
+
+	    if (this.privateState.isRAFCanceled) { return; }
 	    privated.rAF.call(this);
 
 	    var diff = this.state.target - this.state.current;
@@ -1216,24 +1218,21 @@
 	      privated.cAF.call(this);
 	      delta = 0;
 	      this.state.current = this.state.target;
+	      if (this.state.changing) {
+	        this.state.changing = false;
+	        this.options.changeEnd(this.state);
+	      }
 	    } else {
 	      this.state.current += delta;
+	      if (!this.state.changing) {
+	        this.state.changing = true;
+	        this.options.changeStart(this.state);
+	      }
 	    }
 
-	    var exportedState = utils.exportState(this.state, [
-	      'current',
-	      'previous',
-	      'target',
-	      'width',
-	      'height',
-	      'bounding',
-	      'ready',
-	      'preLoaded',
-	      'transformPrefix' ]);
-
-	    if (Math.abs(diff) < 10 && this.state.scrollTo.callback) {
-	      this.state.scrollTo.callback(exportedState);
-	      this.state.scrollTo.callback = null;
+	    if (Math.abs(diff) < 10 && this.privateState.scrollTo.callback) {
+	      this.privateState.scrollTo.callback(this.state);
+	      this.privateState.scrollTo.callback = null;
 	    }
 
 	    // Set scroll bar thumb position
@@ -1242,11 +1241,9 @@
 	    }
 
 	    // Call custom change
-	    if (this.options.change) {
-	      this.options.change(exportedState);
-	    }
+	    this.options.change(this.state);
 
-	    this.scenes.forEach(function (scene) { return scene.change(exportedState); });
+	    this.scenes.forEach(function (scene) { return scene.change(this$1.state); });
 
 	    this.state.previous = this.state.current;
 	  },
@@ -1255,16 +1252,16 @@
 	   * Request an animation frame.
 	   */
 	  rAF: function rAF() {
-	    this.state.isRAFCanceled = false;
-	    this.state.rAF = requestAnimationFrame(privated.change.bind(this));
+	    this.privateState.isRAFCanceled = false;
+	    this.privateState.rAF = requestAnimationFrame(privated.change.bind(this));
 	  },
 
 	  /**
 	   * Cancel a requested animation frame.
 	   */
 	  cAF: function cAF() {
-	    this.state.isRAFCanceled = true;
-	    this.state.rAF = cancelAnimationFrame(this.state.rAF);
+	    this.privateState.isRAFCanceled = true;
+	    this.privateState.rAF = cancelAnimationFrame(this.privateState.rAF);
 	  },
 
 	  /*
@@ -1279,9 +1276,7 @@
 	      this.state.ready
 	      && (this.options.preload ? this.state.preLoaded : true)
 	    ) {
-	      if (this.options.ready) {
-	        this.options.ready(this.state);
-	      }
+	      this.options.ready(this.state);
 	      return true;
 	    }
 	    return false;
@@ -1292,8 +1287,8 @@
 	   * @param {object} e - The event data.
 	   */
 	  virtualScroll: function virtualScroll(e) {
-	    if (this.state.scrollTo.callback) { return; }
-	    var delta = this.options.direction === 'horizontal' ? e.deltaX : e.deltaY;
+	    if (this.privateState.scrollTo.callback) { return; }
+	    var delta = this.options.vertical ? e.deltaY : e.deltaX;
 	    privated.setTarget.call(this, this.state.target + delta * -1);
 	  },
 
@@ -1304,12 +1299,12 @@
 	  debounceScroll: function debounceScroll(e) {
 	    var this$1 = this;
 
-	    if (this.state.scrollTo.callback) { return; }
+	    if (this.privateState.scrollTo.callback) { return; }
 	    var isWindow = this.DOM.listener === document.body;
 
 	    var target;
 
-	    if (this.options.direction === 'vertical') {
+	    if (this.options.vertical) {
 	      target = isWindow
 	        ? window.scrollY || window.pageYOffset
 	        : this.DOM.listener.scrollTop;
@@ -1321,15 +1316,15 @@
 
 	    privated.setTarget.call(this, target);
 
-	    clearTimeout(this.state.debounceScroll.timer);
+	    clearTimeout(this.privateState.debounceScroll.timer);
 
-	    if (!this.state.debounceScroll.tick) {
-	      this.state.debounceScroll.tick = true;
+	    if (!this.privateState.debounceScroll.tick) {
+	      this.privateState.debounceScroll.tick = true;
 	      this.DOM.listener.classList.add('is-scrolling');
 	    }
 
-	    this.state.debounceScroll.timer = setTimeout(function () {
-	      this$1.state.debounceScroll.tick = false;
+	    this.privateState.debounceScroll.timer = setTimeout(function () {
+	      this$1.privateState.debounceScroll.tick = false;
 	      this$1.DOM.listener.classList.remove('is-scrolling');
 	    }, 200);
 	  },
@@ -1341,20 +1336,23 @@
 	  resize: function resize(e) {
 	    var this$1 = this;
 
-	    var prop = this.options.direction === 'vertical' ? 'height' : 'width';
+	    var prop = this.options.vertical ? 'height' : 'width';
 	    this.state.height = window.innerHeight;
 	    this.state.width = window.innerWidth;
 
 	    // Calc bounding
+	    var ref = this.options;
+	    var native = ref.native;
+	    var vertical = ref.vertical;
 	    var bounding = this.DOM.view.getBoundingClientRect();
-	    this.state.bounding = this.options.direction === 'vertical'
-	      ? bounding.height - (this.options.native ? 0 : this.state.height)
-	      : bounding.right - (this.options.native ? 0 : this.state.width);
+	    this.state.bounding = vertical
+	      ? bounding.height - (native ? 0 : this.state.height)
+	      : bounding.right - (native ? 0 : this.state.width);
 
 	    // Set scroll bar thumb height (according to view height)
 	    if (this.scrollBar) {
 	      this.scrollBar.cache(this.state);
-	    } else if (this.options.native) {
+	    } else if (native) {
 	      this.DOM.scroll.style[prop] = (this.state.bounding) + "px";
 	    }
 
@@ -1452,13 +1450,15 @@
 	   */
 	  getDefaults: function getDefaults() {
 	    return {
-	      direction: 'vertical',
+	      vertical: true,
 	      listener: document.body,
 	      view: utils.getElements('.rolly-view')[0] || null,
 	      native: false,
 	      preload: true,
-	      ready: null,
-	      change: null,
+	      ready: function () {},
+	      change: function () {},
+	      changeStart: function () {},
+	      changeEnd: function () {},
 	      ease: 0.075,
 	      virtualScroll: {
 	        limitInertia: false,
@@ -1488,10 +1488,11 @@
 	   * Sets the target position with auto clamping.
 	   */
 	  setTarget: function setTarget(target) {
+	    // if (target === null) return;
 	    this.state.target = Math.round(
 	      Math.max(0, Math.min(target, this.state.bounding))
 	    );
-	    !this.state.rAF && privated.rAF.call(this);
+	    !this.privateState.rAF && privated.rAF.call(this);
 	  },
 	};
 
@@ -1529,7 +1530,7 @@
 	  privated.initState.call(this);
 
 	  var type = this.options.native ? 'native' : 'virtual';
-	  var direction = this.options.direction === 'vertical' ? 'y' : 'x';
+	  var direction = this.options.vertical ? 'y' : 'x';
 
 	  this.DOM.listener.classList.add(("is-" + type + "-scroll"));
 	  this.DOM.listener.classList.add((direction + "-scroll"));
@@ -1614,14 +1615,16 @@
 	 */
 	Rolly.prototype.destroy = function destroy () {
 	  var type = this.options.native ? 'native' : 'virtual';
-	  var direction = this.options.direction === 'vertical' ? 'y' : 'x';
+	  var direction = this.options.vertical ? 'y' : 'x';
 
 	  this.DOM.listener.classList.remove(("is-" + type + "-scroll"));
 	  this.DOM.listener.classList.remove((direction + "-scroll"));
 	  this.DOM.view.classList.remove('rolly-view');
 
-	  this.virtualScroll
-	    && (this.virtualScroll.destroy(), (this.virtualScroll = null));
+	  if (this.virtualScroll) {
+	    this.virtualScroll.destroy();
+	    this.virtualScroll = null;
+	  }
 
 	  this.off();
 
@@ -1670,7 +1673,8 @@
 	  };
 	  options = Object.assign({}, defaultOptions, options);
 
-	  var vertical = this.options.direction === 'vertical';
+	  var ref = this.options;
+	    var vertical = ref.vertical;
 	  var scrollOffset = this.state.current;
 	  var bounding = null;
 	  var newPos = scrollOffset + options.offset;
@@ -1704,12 +1708,12 @@
 	  }
 
 	  if (options.callback) {
-	    this.state.scrollTo.callback = options.callback;
+	    this.privateState.scrollTo.callback = options.callback;
 	  }
 
 	  // FIXME: if the scrollable element is not the body, this won't work
 	  if (this.options.native) {
-	    this.options.direction === 'vertical'
+	    this.options.vertical
 	      ? window.scrollTo(0, newPos)
 	      : window.scrollTo(newPos, 0);
 	  } else {

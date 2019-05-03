@@ -25,16 +25,20 @@ const privated = {
    */
   initState() {
     this.state = {
-      // Global states
       current: 0,
       previous: 0,
-      target: 0,
+      target: null,
       width: window.innerWidth,
       height: window.innerHeight,
       bounding: 0,
       ready: false,
       preLoaded: false,
+      changing: false,
+      // The transform property to use
+      transformPrefix: prefix('transform'),
+    };
 
+    this.privateState = {
       // Animation frame
       rAF: undefined,
       /*
@@ -48,11 +52,7 @@ const privated = {
       // Native scroll
       debounceScroll: { timer: null, tick: false },
 
-      // Scroll to
       scrollTo: {},
-
-      // The transform property to use
-      transformPrefix: prefix('transform'),
     };
   },
 
@@ -76,7 +76,7 @@ const privated = {
    * Automatically stops when |target - current| < 0.1.
    */
   change() {
-    if (this.state.isRAFCanceled) return;
+    if (this.privateState.isRAFCanceled) return;
     privated.rAF.call(this);
 
     const diff = this.state.target - this.state.current;
@@ -87,25 +87,21 @@ const privated = {
       privated.cAF.call(this);
       delta = 0;
       this.state.current = this.state.target;
+      if (this.state.changing) {
+        this.state.changing = false;
+        this.options.changeEnd(this.state);
+      }
     } else {
       this.state.current += delta;
+      if (!this.state.changing) {
+        this.state.changing = true;
+        this.options.changeStart(this.state);
+      }
     }
 
-    const exportedState = utils.exportState(this.state, [
-      'current',
-      'previous',
-      'target',
-      'width',
-      'height',
-      'bounding',
-      'ready',
-      'preLoaded',
-      'transformPrefix',
-    ]);
-
-    if (Math.abs(diff) < 10 && this.state.scrollTo.callback) {
-      this.state.scrollTo.callback(exportedState);
-      this.state.scrollTo.callback = null;
+    if (Math.abs(diff) < 10 && this.privateState.scrollTo.callback) {
+      this.privateState.scrollTo.callback(this.state);
+      this.privateState.scrollTo.callback = null;
     }
 
     // Set scroll bar thumb position
@@ -114,11 +110,9 @@ const privated = {
     }
 
     // Call custom change
-    if (this.options.change) {
-      this.options.change(exportedState);
-    }
+    this.options.change(this.state);
 
-    this.scenes.forEach(scene => scene.change(exportedState));
+    this.scenes.forEach(scene => scene.change(this.state));
 
     this.state.previous = this.state.current;
   },
@@ -127,16 +121,16 @@ const privated = {
    * Request an animation frame.
    */
   rAF() {
-    this.state.isRAFCanceled = false;
-    this.state.rAF = requestAnimationFrame(privated.change.bind(this));
+    this.privateState.isRAFCanceled = false;
+    this.privateState.rAF = requestAnimationFrame(privated.change.bind(this));
   },
 
   /**
    * Cancel a requested animation frame.
    */
   cAF() {
-    this.state.isRAFCanceled = true;
-    this.state.rAF = cancelAnimationFrame(this.state.rAF);
+    this.privateState.isRAFCanceled = true;
+    this.privateState.rAF = cancelAnimationFrame(this.privateState.rAF);
   },
 
   /*
@@ -151,9 +145,7 @@ const privated = {
       this.state.ready
       && (this.options.preload ? this.state.preLoaded : true)
     ) {
-      if (this.options.ready) {
-        this.options.ready(this.state);
-      }
+      this.options.ready(this.state);
       return true;
     }
     return false;
@@ -164,8 +156,8 @@ const privated = {
    * @param {object} e - The event data.
    */
   virtualScroll(e) {
-    if (this.state.scrollTo.callback) return;
-    const delta = this.options.direction === 'horizontal' ? e.deltaX : e.deltaY;
+    if (this.privateState.scrollTo.callback) return;
+    const delta = this.options.vertical ? e.deltaY : e.deltaX;
     privated.setTarget.call(this, this.state.target + delta * -1);
   },
 
@@ -174,12 +166,12 @@ const privated = {
    * @param {object} e - The event data.
    */
   debounceScroll(e) {
-    if (this.state.scrollTo.callback) return;
+    if (this.privateState.scrollTo.callback) return;
     const isWindow = this.DOM.listener === document.body;
 
     let target;
 
-    if (this.options.direction === 'vertical') {
+    if (this.options.vertical) {
       target = isWindow
         ? window.scrollY || window.pageYOffset
         : this.DOM.listener.scrollTop;
@@ -191,15 +183,15 @@ const privated = {
 
     privated.setTarget.call(this, target);
 
-    clearTimeout(this.state.debounceScroll.timer);
+    clearTimeout(this.privateState.debounceScroll.timer);
 
-    if (!this.state.debounceScroll.tick) {
-      this.state.debounceScroll.tick = true;
+    if (!this.privateState.debounceScroll.tick) {
+      this.privateState.debounceScroll.tick = true;
       this.DOM.listener.classList.add('is-scrolling');
     }
 
-    this.state.debounceScroll.timer = setTimeout(() => {
-      this.state.debounceScroll.tick = false;
+    this.privateState.debounceScroll.timer = setTimeout(() => {
+      this.privateState.debounceScroll.tick = false;
       this.DOM.listener.classList.remove('is-scrolling');
     }, 200);
   },
@@ -209,20 +201,21 @@ const privated = {
    * @param {object} e - The event data.
    */
   resize(e) {
-    const prop = this.options.direction === 'vertical' ? 'height' : 'width';
+    const prop = this.options.vertical ? 'height' : 'width';
     this.state.height = window.innerHeight;
     this.state.width = window.innerWidth;
 
     // Calc bounding
+    const { native, vertical } = this.options;
     const bounding = this.DOM.view.getBoundingClientRect();
-    this.state.bounding = this.options.direction === 'vertical'
-      ? bounding.height - (this.options.native ? 0 : this.state.height)
-      : bounding.right - (this.options.native ? 0 : this.state.width);
+    this.state.bounding = vertical
+      ? bounding.height - (native ? 0 : this.state.height)
+      : bounding.right - (native ? 0 : this.state.width);
 
     // Set scroll bar thumb height (according to view height)
     if (this.scrollBar) {
       this.scrollBar.cache(this.state);
-    } else if (this.options.native) {
+    } else if (native) {
       this.DOM.scroll.style[prop] = `${this.state.bounding}px`;
     }
 
@@ -320,13 +313,15 @@ const privated = {
    */
   getDefaults() {
     return {
-      direction: 'vertical',
+      vertical: true,
       listener: document.body,
       view: utils.getElements('.rolly-view')[0] || null,
       native: false,
       preload: true,
-      ready: null,
-      change: null,
+      ready: () => {},
+      change: () => {},
+      changeStart: () => {},
+      changeEnd: () => {},
       ease: 0.075,
       virtualScroll: {
         limitInertia: false,
@@ -356,10 +351,11 @@ const privated = {
    * Sets the target position with auto clamping.
    */
   setTarget(target) {
+    // if (target === null) return;
     this.state.target = Math.round(
       Math.max(0, Math.min(target, this.state.bounding)),
     );
-    !this.state.rAF && privated.rAF.call(this);
+    !this.privateState.rAF && privated.rAF.call(this);
   },
 };
 
@@ -403,7 +399,7 @@ class Rolly {
     privated.initState.call(this);
 
     const type = this.options.native ? 'native' : 'virtual';
-    const direction = this.options.direction === 'vertical' ? 'y' : 'x';
+    const direction = this.options.vertical ? 'y' : 'x';
 
     this.DOM.listener.classList.add(`is-${type}-scroll`);
     this.DOM.listener.classList.add(`${direction}-scroll`);
@@ -484,14 +480,16 @@ class Rolly {
    */
   destroy() {
     const type = this.options.native ? 'native' : 'virtual';
-    const direction = this.options.direction === 'vertical' ? 'y' : 'x';
+    const direction = this.options.vertical ? 'y' : 'x';
 
     this.DOM.listener.classList.remove(`is-${type}-scroll`);
     this.DOM.listener.classList.remove(`${direction}-scroll`);
     this.DOM.view.classList.remove('rolly-view');
 
-    this.virtualScroll
-      && (this.virtualScroll.destroy(), (this.virtualScroll = null));
+    if (this.virtualScroll) {
+      this.virtualScroll.destroy();
+      this.virtualScroll = null;
+    }
 
     this.off();
 
@@ -537,7 +535,7 @@ class Rolly {
     };
     options = { ...defaultOptions, ...options };
 
-    const vertical = this.options.direction === 'vertical';
+    const { vertical } = this.options;
     const scrollOffset = this.state.current;
     let bounding = null;
     let newPos = scrollOffset + options.offset;
@@ -571,12 +569,12 @@ class Rolly {
     }
 
     if (options.callback) {
-      this.state.scrollTo.callback = options.callback;
+      this.privateState.scrollTo.callback = options.callback;
     }
 
     // FIXME: if the scrollable element is not the body, this won't work
     if (this.options.native) {
-      this.options.direction === 'vertical'
+      this.options.vertical
         ? window.scrollTo(0, newPos)
         : window.scrollTo(newPos, 0);
     } else {

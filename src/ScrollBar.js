@@ -31,9 +31,7 @@ export default class ScrollBar {
   cache(globalState) {
     this.state.cache = {
       bounding: globalState.bounding,
-      viewSize: this.options.direction === 'vertical'
-        ? globalState.height
-        : globalState.width,
+      viewSize: this.options.vertical ? globalState.height : globalState.width,
     };
     this.updateThumbSize();
   }
@@ -44,11 +42,16 @@ export default class ScrollBar {
    */
   change({ current, transformPrefix }) {
     const { bounding, viewSize } = this.state.cache;
-    const value = Math.abs(current) / (bounding / (viewSize - this.thumbSize))
-      + this.thumbSize / 0.5
-      - this.thumbSize;
-    const clamp = Math.max(0, Math.min(value - this.thumbSize, value + this.thumbSize));
-    this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(clamp.toFixed(2), this.options.direction);
+    const { thumbSize } = this;
+    const value = Math.abs(current) / (bounding / (viewSize - thumbSize))
+      + thumbSize / 0.5
+      - thumbSize;
+
+    const clamp = Math.max(0, Math.min(value - thumbSize, value + thumbSize));
+    this.DOM.thumb.style[transformPrefix] = utils.getCSSTransform(
+      clamp.toFixed(2),
+      this.options.vertical,
+    );
   }
 
   /**
@@ -67,7 +70,8 @@ export default class ScrollBar {
    */
   render(parent) {
     const context = document.createElement('div');
-    context.className = `rolly-scroll-bar rolly-${this.options.direction}`;
+    const direction = this.options.vertical ? 'y' : 'x';
+    context.className = `rolly-scroll-bar ${direction}-scroll`;
 
     const thumb = document.createElement('div');
     thumb.className = 'rolly-scroll-bar-thumb';
@@ -115,7 +119,7 @@ export default class ScrollBar {
    * @param {object} event - The event data.
    */
   click(event) {
-    const value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
+    const value = this.calc(this.options.vertical ? event.clientY : event.clientX);
     this.setTarget(value);
   }
 
@@ -137,7 +141,7 @@ export default class ScrollBar {
    */
   mouseMove(event) {
     if (this.state.clicked) {
-      const value = this.calc(this.options.direction === 'vertical' ? event.clientY : event.clientX);
+      const value = this.calc(this.options.vertical ? event.clientY : event.clientX);
       this.setTarget(value);
     }
   }
@@ -148,7 +152,7 @@ export default class ScrollBar {
    */
   mouseUp(event) {
     this.state.clicked = false;
-    this.DOM.parent.classList.remove('is-dragging');
+    this.DOM.parent.classList.remove('is-dragging-scroll-bar');
   }
 
   /**
@@ -165,7 +169,7 @@ export default class ScrollBar {
    */
   set thumbSize(size) {
     this.state.thumb.size = size;
-    const prop = this.options.direction === 'vertical' ? 'height' : 'width';
+    const prop = this.options.vertical ? 'height' : 'width';
     this.DOM.thumb.style[prop] = `${size}px`;
   }
 
@@ -178,6 +182,7 @@ export default class ScrollBar {
     if (bounding <= 0) {
       this.DOM.context.classList.add('is-hidden');
       this.thumbSize = 0;
+      return;
     }
 
     this.DOM.context.classList.remove('is-hidden');
