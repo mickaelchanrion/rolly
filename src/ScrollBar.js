@@ -182,6 +182,7 @@ export default class ScrollBar {
     if (bounding <= 0) {
       this.DOM.context.classList.add('is-hidden');
       this.thumbSize = 0;
+      return;
     }
 
     this.DOM.context.classList.remove('is-hidden');

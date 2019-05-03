@@ -1,5 +1,5 @@
 /*!
-    * rolly.js v0.3.0
+    * rolly.js v0.3.1
     * (c) 2019 Mickael Chanrion
     * Released under the MIT license
     */
@@ -506,6 +506,7 @@ ScrollBar.prototype.updateThumbSize = function updateThumbSize () {
   if (bounding <= 0) {
     this.DOM.context.classList.add('is-hidden');
     this.thumbSize = 0;
+    return;
   }
 
   this.DOM.context.classList.remove('is-hidden');
