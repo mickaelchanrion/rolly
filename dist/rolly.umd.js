@@ -1,5 +1,5 @@
 /*!
-    * rolly.js v0.3.1
+    * rolly.js v0.3.3
     * (c) 2019 Mickael Chanrion
     * Released under the MIT license
     */
@@ -1455,10 +1455,11 @@
 	      view: utils.getElements('.rolly-view')[0] || null,
 	      native: false,
 	      preload: true,
-	      ready: function () {},
-	      change: function () {},
-	      changeStart: function () {},
-	      changeEnd: function () {},
+	      autoUpdate: true,
+	      ready: function () { },
+	      change: function () { },
+	      changeStart: function () { },
+	      changeEnd: function () { },
 	      ease: 0.075,
 	      virtualScroll: {
 	        limitInertia: false,
@@ -1574,7 +1575,9 @@
 	  rAF && privated.rAF.call(this);
 
 	  privated.resize.call(this);
-	  window.addEventListener('resize', this.boundFns.resize);
+	  if (this.options.autoUpdate) {
+	    window.addEventListener('resize', this.boundFns.resize);
+	  }
 
 	  this.state.ready = true;
 	  privated.ready.call(this);
@@ -1602,7 +1605,9 @@
 
 	  cAF && privated.cAF.call(this);
 
-	  window.removeEventListener('resize', this.boundFns.resize);
+	  if (this.options.autoUpdate) {
+	    window.removeEventListener('resize', this.boundFns.resize);
+	  }
 	  this.state.ready = false;
 	};
 
