@@ -45,6 +45,13 @@ If true, Rolly will load every images contained in the scenes and then, refresh 
 - type: `Boolean`
 - default: `false`
 
+### autoUpdate
+
+If true, Rolly will listen for resize events and refresh the cache according the new layout of the view.
+
+- type: `Boolean`
+- default: `true`
+
 ### ready
 
 The callback when Rolly is ready.

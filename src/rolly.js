@@ -318,10 +318,11 @@ const privated = {
       view: utils.getElements('.rolly-view')[0] || null,
       native: false,
       preload: true,
-      ready: () => {},
-      change: () => {},
-      changeStart: () => {},
-      changeEnd: () => {},
+      autoUpdate: true,
+      ready: () => { },
+      change: () => { },
+      changeStart: () => { },
+      changeEnd: () => { },
       ease: 0.075,
       virtualScroll: {
         limitInertia: false,
@@ -441,7 +442,9 @@ class Rolly {
     rAF && privated.rAF.call(this);
 
     privated.resize.call(this);
-    window.addEventListener('resize', this.boundFns.resize);
+    if (this.options.autoUpdate) {
+      window.addEventListener('resize', this.boundFns.resize);
+    }
 
     this.state.ready = true;
     privated.ready.call(this);
@@ -467,7 +470,9 @@ class Rolly {
 
     cAF && privated.cAF.call(this);
 
-    window.removeEventListener('resize', this.boundFns.resize);
+    if (this.options.autoUpdate) {
+      window.removeEventListener('resize', this.boundFns.resize);
+    }
     this.state.ready = false;
   }
 

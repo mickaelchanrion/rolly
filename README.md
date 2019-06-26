@@ -22,6 +22,10 @@ This library was created with the aim of offering three features:
 
 [Examples](https://codepen.io/collection/AyEJzY/)
 
+## Documentation
+
+The documentation is available here: [https://mickaelchanrion.github.io/rolly/](https://mickaelchanrion.github.io/rolly/)
+
 ## Getting started
 
 ### Download rolly
@@ -100,10 +104,6 @@ const r = rolly({
 });
 r.init();
 ```
-
-## Documentation
-
-The documentation is available here: [https://mickaelchanrion.github.io/rolly/](https://mickaelchanrion.github.io/rolly/)
 
 ## Contributors
 
