@@ -1,6 +1,6 @@
 {
   "name": "rolly.js",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Custom scroll with inertia, smooth parallax and scenes manager",
   "moduleName": "rolly",
   "main": "dist/rolly.umd.js",
@@ -15,7 +15,7 @@
     "build": "npm run eslint && rollup -c ./build/rollup.config.js --environment BUILD:production",
     "dev": "rollup -c ./build/rollup.config.js -w --environment BUILD:development",
     "test": "echo \"Error: no test specified\"",
-    "publish": "np",
+    "publish": "npm run build && np",
     "docs:build": "vuepress build ./docs",
     "docs:dev": "vuepress dev ./docs",
     "docs:publish": "sh docs/deploy.sh"
