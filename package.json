@@ -14,7 +14,7 @@
     "eslint": "eslint --ext .js --ignore-path .gitignore --fix ./src/",
     "build": "npm run eslint && rollup -c ./build/rollup.config.js --environment BUILD:production",
     "dev": "rollup -c ./build/rollup.config.js -w --environment BUILD:development",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\"",
     "publish": "np",
     "docs:build": "vuepress build ./docs",
     "docs:dev": "vuepress dev ./docs",
