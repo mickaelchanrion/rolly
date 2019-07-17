@@ -1,6 +1,6 @@
 {
   "name": "rolly.js",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Custom scroll with inertia, smooth parallax and scenes manager",
   "moduleName": "rolly",
   "main": "dist/rolly.umd.js",

@@ -1,5 +1,5 @@
 /*!
-    * rolly.js v0.3.3
+    * rolly.js v0.3.4
     * (c) 2019 Mickael Chanrion
     * Released under the MIT license
     */
@@ -819,7 +819,7 @@
 	        options.enter.call(this, data);
 	      }
 	    } else if (this.checkLeave(active, this.state.progress)) {
-	    // Leave
+	      // Leave
 	      this.state.active = false;
 	      if (sceneOptions.leave) {
 	        sceneOptions.leave.call(this, data);
@@ -839,7 +839,7 @@
 	  } else {
 	    this.DOM.context.style[
 	      globalState.transformPrefix
-	    ] = utils.getCSSTransform(globalState.bounding, this.options.vertical);
+	    ] = utils.getCSSTransform(Math.max(globalState.bounding, viewSize + 50), this.options.vertical);
 	    this.DOM.context.style.willChange = null;
 	  }
 
