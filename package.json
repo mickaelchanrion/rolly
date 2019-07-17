@@ -47,7 +47,7 @@
   "homepage": "https://rolly.maj.digital",
   "dependencies": {
     "prefix": "^1.0.0",
-    "virtual-scroll": "^1.3.1"
+    "virtual-scroll": "^1.5.1"
   },
   "devDependencies": {
     "babel-eslint": "^10.0.1",
