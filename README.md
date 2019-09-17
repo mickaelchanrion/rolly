@@ -14,13 +14,11 @@
 
 rolly is a library written in javascript for building pages that moves smoothly.
 
-This library was created with the aim of offering three features:
+This library was created with the aim of offering three main features:
 
 - change the behavior of the default scroll for a smoother effect
 - quickly and flexibly add a customizable parallax effect to any element on a page
 - add any behavior to your scenes bound to the scroll state (custom transforms, seek animations…)
-
-[Examples](https://codepen.io/collection/AyEJzY/)
 
 ## Documentation
 
@@ -119,22 +117,22 @@ You will find some examples [here](https://codepen.io/collection/AyEJzY/).
 
 Some websites using rolly.js 😎
 
-- [Elua poke](https://eluapoke.ch) - Very first website using rolly.js (@majdigital)
-- [Rolly's demo]() - WIP, coming soon… ⏳ (@mickaelchanrion)
-- [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll (@majdigital)
-- [Pepperstate landing page](https://pepperstate-landing.netlify.com) - WIP, coming soon… ⏳ (@majdigital)
-- [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ (@mickaelchanrion)
+- [Elua poke](https://eluapoke.ch) - Very first website using rolly.js [@majdigital](https://github.com/majdigital)
+- [Rolly's demo]() - WIP, coming soon… ⏳ [@majdigital](https://github.com/mickaelchanrion)
+- [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll [@majdigital](https://github.com/majdigital)
+- [Pepperstate landing page](https://pepperstate-landing.netlify.com) - WIP, coming soon… ⏳ [@majdigital](https://github.com/majdigital)
+- [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ [@majdigital](https://github.com/mickaelchanrion)
 - Wanna [add your website](https://github.com/mickaelchanrion/rolly/issues/new?body=Hey%21+%0AI+have+made+this+website+%7BURL%7D+using+rolly.js.+Check+it+out%21+%0AFeel+free+to+add+it+in+the+showcase+list+%3A%29&labels=showcase)? Do it, I'd love to see rolly in action 😊
 
 ## Roadmap
 
 - [x] Create documentation
 - [x] Create some examples
-- [ ] Fix the scrollTo function ()
+- [ ] Fix the scrollTo function
 - [ ] Test and fix [issues](https://mickaelchanrion.github.io/rolly/api/#vertical) when `vertical` options is set to `false`
 - [ ] Change the way the easing is computed. Probably with a clean Lerp function
 - [ ] Implement different easing for each scene (it would had a nice organic effect 🤩)
-- [Need a feature?]('https://github.com/mickaelchanrion/rolly/issues/new?labels=feature+request')
+- [Need a feature?](https://github.com/mickaelchanrion/rolly/issues/new?labels=feature+request)
 
 ## Contributors
 
