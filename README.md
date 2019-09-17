@@ -28,6 +28,9 @@ The documentation is available here: [https://mickaelchanrion.github.io/rolly/](
 
 ## Getting started
 
+<details><summary>Click to expand</summary>
+<p>
+
 ### Download rolly
 
 ```bash
@@ -104,6 +107,34 @@ const r = rolly({
 });
 r.init();
 ```
+
+</p>
+</details>
+
+## Examples
+
+You will find some examples [here](https://codepen.io/collection/AyEJzY/).
+
+## Showcase
+
+Some websites using rolly.js 😎
+
+- [Elua poke](https://eluapoke.ch) - Very first website using rolly.js (@majdigital)
+- [Rolly's demo]() - WIP, coming soon… ⏳ (@mickaelchanrion)
+- [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll (@majdigital)
+- [Pepperstate landing page](https://pepperstate-landing.netlify.com) - WIP, coming soon… ⏳ (@majdigital)
+- [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ (@mickaelchanrion)
+- Wanna [add your website](https://github.com/mickaelchanrion/rolly/issues/new?body=Hey%21+%0AI+have+made+this+website+%7BURL%7D+using+rolly.js.+Check+it+out%21+%0AFeel+free+to+add+it+in+the+showcase+list+%3A%29&labels=showcase)? Do it, I'd love to see rolly in action 😊
+
+## Roadmap
+
+- [x] Create documentation
+- [x] Create some examples
+- [ ] Fix the scrollTo function ()
+- [ ] Test and fix [issues](https://mickaelchanrion.github.io/rolly/api/#vertical) when `vertical` options is set to `false`
+- [ ] Change the way the easing is computed. Probably with a clean Lerp function
+- [ ] Implement different easing for each scene (it would had a nice organic effect 🤩)
+- [Need a feature?]('https://github.com/mickaelchanrion/rolly/issues/new?labels=feature+request')
 
 ## Contributors
 
