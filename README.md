@@ -118,10 +118,10 @@ You will find some examples [here](https://codepen.io/collection/AyEJzY/).
 Some websites using rolly.js 😎
 
 - [Elua poke](https://eluapoke.ch) - Very first website using rolly.js [@majdigital](https://github.com/majdigital)
-- [Rolly's demo]() - WIP, coming soon… ⏳ [@majdigital](https://github.com/mickaelchanrion)
+- [Rolly's demo]() - WIP, coming soon… ⏳ [@mickaelchanrion](https://github.com/mickaelchanrion)
 - [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll [@majdigital](https://github.com/majdigital)
 - [Pepperstate landing page](https://pepperstate-landing.netlify.com) - WIP, coming soon… ⏳ [@majdigital](https://github.com/majdigital)
-- [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ [@majdigital](https://github.com/mickaelchanrion)
+- [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ [@mickaelchanrion](https://github.com/mickaelchanrion)
 - Wanna [add your website](https://github.com/mickaelchanrion/rolly/issues/new?body=Hey%21+%0AI+have+made+this+website+%7BURL%7D+using+rolly.js.+Check+it+out%21+%0AFeel+free+to+add+it+in+the+showcase+list+%3A%29&labels=showcase)? Do it, I'd love to see rolly in action 😊
 
 ## Roadmap
