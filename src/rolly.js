@@ -263,7 +263,7 @@ const privated = {
         if (images.length === 0) callback();
       };
 
-      img.src = image.getAttribute('src');
+      img.src = image.currentSrc || image.src;
     });
   },
 
@@ -316,7 +316,7 @@ const privated = {
       vertical: true,
       listener: document.body,
       view: utils.getElements('.rolly-view')[0] || null,
-      native: false,
+      native: true,
       preload: true,
       autoUpdate: true,
       ready: () => { },

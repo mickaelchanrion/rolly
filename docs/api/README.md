@@ -36,18 +36,18 @@ The element that contains all the scenes.
 If true, Rolly will use the native scroll bar and the native scroll behavior. Otherwise, Rolly will instantiate [virtual-scroll](https://github.com/ayamflow/virtual-scroll) and create a custom scroll bar.
 
 - type: `Boolean`
-- default: `false`
+- default: `true`
 
 ### preload
 
 If true, Rolly will load every images contained in the scenes and then, refresh the cache and call the [ready](#ready) callback.
 
 - type: `Boolean`
-- default: `false`
+- default: `true`
 
 ### autoUpdate
 
-If true, Rolly will listen for resize events and refresh the cache according the new layout of the view.
+If true, Rolly will listen for resize events and refresh the size of the scenes, etc.
 
 - type: `Boolean`
 - default: `true`
@@ -119,7 +119,7 @@ Whether to display a custom scroll bar if the [native](#native) option is false.
 - default: `false`
 
 ::: tip
-For some projects, this option is useful. But most of the time, the non-presence of a scroll bar might ending-up with an UX issue.
+For UX reasons, it is highly recommended to keep a scrollbar.
 :::
 
 ### scenes

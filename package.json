@@ -1,6 +1,6 @@
 {
   "name": "rolly.js",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "description": "Custom scroll with inertia, smooth parallax and scenes manager",
   "moduleName": "rolly",
   "main": "dist/rolly.umd.js",
@@ -58,7 +58,7 @@
     "rollup-plugin-buble": "^0.19.6",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-uglify": "^6.0.1",
-    "vuepress": "^1.0.2"
+    "rollup-plugin-uglify": "^6.0.4",
+    "vuepress": "^1.4.1"
   }
 }
