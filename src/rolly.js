@@ -316,7 +316,7 @@ const privated = {
       vertical: true,
       listener: document.body,
       view: utils.getElements('.rolly-view')[0] || null,
-      native: false,
+      native: true,
       preload: true,
       autoUpdate: true,
       ready: () => { },

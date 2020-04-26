@@ -1,6 +1,6 @@
 /*!
-    * rolly.js v0.3.6
-    * (c) 2019 Mickael Chanrion
+    * rolly.js v0.4.0
+    * (c) 2020 Mickael Chanrion
     * Released under the MIT license
     */
   
@@ -1402,7 +1402,7 @@
 	        if (images.length === 0) { callback(); }
 	      };
 
-	      img.src = image.getAttribute('src');
+	      img.src = image.currentSrc || image.src;
 	    });
 	  },
 
@@ -1455,7 +1455,7 @@
 	      vertical: true,
 	      listener: document.body,
 	      view: utils.getElements('.rolly-view')[0] || null,
-	      native: false,
+	      native: true,
 	      preload: true,
 	      autoUpdate: true,
 	      ready: function () { },
