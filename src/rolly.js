@@ -263,7 +263,7 @@ const privated = {
         if (images.length === 0) callback();
       };
 
-      img.src = image.getAttribute('src');
+      img.src = image.currentSrc || image.src;
     });
   },
 
