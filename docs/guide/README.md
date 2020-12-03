@@ -70,9 +70,8 @@ Or from unpkg: `https://unpkg.com/rolly.js@<VERSION>/css/style.css`
 ```js
 import rolly from 'rolly.js';
 
-const view = document.querySelector('.app');
 const r = rolly({
-  view,
+  view: document.querySelector('.app'),
   native: true,
   // other options
 });

@@ -235,7 +235,7 @@ Called when the trigger enters the scene.
     - The computed transform value (in pixels)
 
 <video class="video" width="690" height="400" controls loop>
-  <source src="/scene-enter.mp4" type="video/mp4">
+  <source src="/rolly/scene-enter.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
@@ -252,7 +252,7 @@ Called when the trigger leaves the scene.
     - The computed transform value (in pixels)
 
 <video class="video" width="690" height="400" controls loop>
-  <source src="/scene-leave.mp4" type="video/mp4">
+  <source src="/rolly/scene-leave.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 

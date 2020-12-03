@@ -118,7 +118,7 @@ You will find some examples [here](https://codepen.io/collection/AyEJzY/).
 
 Some websites using rolly.js 😎
 
-- [Rolly's demo](https://rolly.maj.digital/) - The demo 😎 - from [@mickaelchanrion](https://github.com/mickaelchanrion)
+- [Rolly's demo](https://rolly.maj.digital/) - from [@mickaelchanrion](https://github.com/mickaelchanrion)
 - [Elua poke](https://eluapoke.ch) - Very first website using rolly.js - from [@majdigital](https://github.com/majdigital)
 - [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll - from [@majdigital](https://github.com/majdigital)
 - [PepperState landing page](https://pepperstate.com) - from [@majdigital](https://github.com/majdigital)
