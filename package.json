@@ -33,11 +33,14 @@
     "scrollto",
     "rolly"
   ],
-  "author": "Mickael Chanrion",
+  "authors": {
+    "name": "Mickael Chanrion",
+    "email": "michkkael@gmail.com"
+  },
   "contributors": [
     {
       "name": "MAJ digital",
-      "email": "info@maj.digital"
+      "email": "dev@maj.digital"
     }
   ],
   "license": "MIT",

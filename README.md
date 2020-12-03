@@ -12,13 +12,15 @@
 
 ## What is rolly.js?
 
-rolly is a library written in javascript for building pages that moves smoothly.
+rolly.js is a library written in javascript for building pages that moves smoothly.
 
-This library was created with the aim of offering three main features:
+This library offers 3 main features:
 
 - change the behavior of the default scroll for a smoother effect
 - quickly and flexibly add a customizable parallax effect to any element on a page
 - add any behavior to your scenes bound to the scroll state (custom transforms, seek animations…)
+
+Checkout the [demo](https://rolly.maj.digital/)!
 
 ## Documentation
 
@@ -97,9 +99,8 @@ Or from unpkg: `https://unpkg.com/rolly.js@<VERSION>/css/style.css`
 ```js
 import rolly from 'rolly.js';
 
-const view = document.querySelector('.app');
 const r = rolly({
-  view,
+  view: document.querySelector('.app'),
   native: true,
   // other options
 });
@@ -117,12 +118,12 @@ You will find some examples [here](https://codepen.io/collection/AyEJzY/).
 
 Some websites using rolly.js 😎
 
+- [Rolly's demo](https://rolly.maj.digital/) - The demo 😎 - from [@mickaelchanrion](https://github.com/mickaelchanrion)
 - [Elua poke](https://eluapoke.ch) - Very first website using rolly.js - from [@majdigital](https://github.com/majdigital)
-- [Rolly's demo]() - WIP, coming soon… ⏳ - from [@mickaelchanrion](https://github.com/mickaelchanrion)
 - [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll - from [@majdigital](https://github.com/majdigital)
-- [Pepperstate landing page](https://pepperstate-landing.netlify.com) - WIP, coming soon… ⏳ - from [@majdigital](https://github.com/majdigital)
+- [PepperState landing page](https://pepperstate.com) - from [@majdigital](https://github.com/majdigital)
 - [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ - from [@mickaelchanrion](https://github.com/mickaelchanrion)
-- Wanna [add your website](https://github.com/mickaelchanrion/rolly/issues/new?body=Hey%21+%0AI+have+made+this+website+%7BURL%7D+using+rolly.js.+Check+it+out%21+%0AFeel+free+to+add+it+in+the+showcase+list+%3A%29&labels=showcase)? Do it, I'd love to see rolly in action 😊
+- Wanna [add your website](https://github.com/mickaelchanrion/rolly/issues/new?body=Hey%21+%0AI+have+made+this+cool+website+%7BURL%7D+using+rolly.js.+Check+it+out%21+%0AFeel+free+to+add+it+in+the+showcase+list+%3A%29&labels=showcase)? Do it, I'd love to see rolly in action 😊
 
 ## Roadmap
 

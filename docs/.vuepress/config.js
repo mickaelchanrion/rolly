@@ -1,10 +1,8 @@
-const pkg = require('../../package');
-
-const { title, description } = pkg;
+const { description } = require('../../package');
 
 module.exports = {
   base: '/rolly/',
-  title,
+  title: 'rolly.js',
   description,
   head: [
     // ['link', { rel: 'icon', href: `/logo.png` }],
@@ -57,7 +55,7 @@ module.exports = {
     locales: {
       '/': {
         label: 'English',
-        title,
+        title: 'rolly.js',
         description,
         selectText: 'Languages',
         editLinkText: 'Edit this page on GitHub',
@@ -88,7 +86,7 @@ module.exports = {
           {
             text: 'Changelog',
             link:
-              'https://github.com/mickaelchanrion/rolly/blob/master/CHANGELOG.md',
+              'https://github.com/mickaelchanrion/rolly/releases',
           },
         ],
       },
