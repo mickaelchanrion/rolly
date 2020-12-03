@@ -1,4 +1,8 @@
-<h1 align="center">rolly.js</h1>
+<h1 align="center">
+  <a href="https://rolly.maj.digital"><img src="/rolly.png" width="250"/></a>
+  <br>
+  rolly.js
+</h1>
 <br>
 <p align="center">Custom scroll with inertia, smooth parallax and scenes manager.</p>
 <p align="center">
