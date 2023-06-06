@@ -6,6 +6,7 @@
   "main": "dist/rolly.umd.js",
   "module": "dist/rolly.esm.js",
   "browser": "dist/rolly.umd.js",
+  "types": "./types.d.ts",
   "files": [
     "dist/*.js",
     "css/*.css"
