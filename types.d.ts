@@ -1,6 +1,6 @@
 declare module 'rolly.js' {
     /**
-     * @link https://mickaelchanrion.github.io/rolly/api/#api-reference|Documentation
+     * @link https://mickaelchanrion.github.io/rolly/api/#api-reference
      */
     interface GlobalState {
         current: number;
@@ -15,8 +15,8 @@ declare module 'rolly.js' {
     }
 
     /**
-         * @link https://github.com/ayamflow/virtual-scroll#options
-         */
+     * @link https://github.com/ayamflow/virtual-scroll#options
+     */
     interface VirtualScrollOptions {
         el?: Element;
         mouseMultiplier?: number;
