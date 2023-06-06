@@ -1,6 +1,6 @@
 /*!
     * rolly.js v0.4.0
-    * (c) 2020 Mickael Chanrion
+    * (c) 2023 undefined
     * Released under the MIT license
     */
   

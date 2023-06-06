@@ -6,11 +6,11 @@
   "main": "dist/rolly.umd.js",
   "module": "dist/rolly.esm.js",
   "browser": "dist/rolly.umd.js",
-  "types": "./types.d.ts",
   "files": [
     "dist/*.js",
     "css/*.css"
   ],
+  "types": "./types.d.ts",
   "scripts": {
     "eslint": "eslint --ext .js --ignore-path .gitignore --fix ./src/",
     "build": "npm run eslint && rollup -c ./build/rollup.config.js --environment BUILD:production",
