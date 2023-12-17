@@ -118,17 +118,6 @@ r.init();
 
 You will find some examples [here](https://codepen.io/collection/AyEJzY/).
 
-## Showcase
-
-Some websites using rolly.js 😎
-
-- [Rolly's demo](https://rolly.maj.digital/) - from [@mickaelchanrion](https://github.com/mickaelchanrion)
-- [Elua poke](https://eluapoke.ch) - Very first website using rolly.js - from [@majdigital](https://github.com/majdigital)
-- [Maj digital's website](https://maj.digital/) - With a crazy diagonal scroll - from [@majdigital](https://github.com/majdigital)
-- [PepperState landing page](https://pepperstate.com) - from [@majdigital](https://github.com/majdigital)
-- [Portfolio of Antoine Rizzo]() - WIP, coming soon… ⏳ - from [@mickaelchanrion](https://github.com/mickaelchanrion)
-- Wanna [add your website](https://github.com/mickaelchanrion/rolly/issues/new?body=Hey%21+%0AI+have+made+this+cool+website+%7BURL%7D+using+rolly.js.+Check+it+out%21+%0AFeel+free+to+add+it+in+the+showcase+list+%3A%29&labels=showcase)? Do it, I'd love to see rolly in action 😊
-
 ## Roadmap
 
 - [x] Create documentation
